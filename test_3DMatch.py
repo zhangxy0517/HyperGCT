@@ -164,79 +164,6 @@ def eval_3DMatch_scene(model, scene, scene_ind, dloader, config, args):
 
     return final_poses, stats, seed_num, seed_precision, correct_num, correct_ratio
 
-
-def benchmark_predator(pred_poses, gt_folder):
-    scenes = sorted(os.listdir(gt_folder))
-    scene_names = [os.path.join(gt_folder, ele) for ele in scenes]
-
-    re_per_scene = defaultdict(list)
-    te_per_scene = defaultdict(list)
-    re_all, te_all, precision, recall = [], [], [], []
-    n_valids = []
-
-    short_names = ['Kitchen', 'Home 1', 'Home 2', 'Hotel 1', 'Hotel 2', 'Hotel 3', 'Study', 'MIT Lab']
-    logging.info(("Scene\t¦ prec.\t¦ rec.\t¦ re\t¦ te\t¦ samples\t¦"))
-
-    start_ind = 0
-    for idx, scene in enumerate(scene_names):
-        # ground truth info
-        gt_pairs, gt_traj = read_trajectory(os.path.join(scene, "gt.log"))
-        n_valid = 0
-        for ele in gt_pairs:
-            diff = abs(int(ele[0]) - int(ele[1]))
-            n_valid += diff > 1
-        n_valids.append(n_valid)
-
-        n_fragments, gt_traj_cov = read_trajectory_info(os.path.join(scene, "gt.info"))
-
-        # estimated info
-        # est_pairs, est_traj = read_trajectory(os.path.join(est_folder,scenes[idx],'est.log'))
-        est_traj = pred_poses[start_ind:start_ind + len(gt_pairs)]
-        start_ind = start_ind + len(gt_pairs)
-
-        temp_precision, temp_recall, c_flag = evaluate_registration(n_fragments, est_traj, gt_pairs, gt_pairs, gt_traj,
-                                                                    gt_traj_cov)
-
-        # Filter out the estimated rotation matrices
-        ext_gt_traj = extract_corresponding_trajectors(gt_pairs, gt_pairs, gt_traj)
-
-        re = rotation_error(torch.from_numpy(ext_gt_traj[:, 0:3, 0:3]),
-                            torch.from_numpy(est_traj[:, 0:3, 0:3])).cpu().numpy()[np.array(c_flag) == 0]
-        te = translation_error(torch.from_numpy(ext_gt_traj[:, 0:3, 3:4]),
-                               torch.from_numpy(est_traj[:, 0:3, 3:4])).cpu().numpy()[np.array(c_flag) == 0]
-
-        re_per_scene['mean'].append(np.mean(re))
-        re_per_scene['median'].append(np.median(re))
-        re_per_scene['min'].append(np.min(re))
-        re_per_scene['max'].append(np.max(re))
-
-        te_per_scene['mean'].append(np.mean(te))
-        te_per_scene['median'].append(np.median(te))
-        te_per_scene['min'].append(np.min(te))
-        te_per_scene['max'].append(np.max(te))
-
-        re_all.extend(re.reshape(-1).tolist())
-        te_all.extend(te.reshape(-1).tolist())
-
-        precision.append(temp_precision)
-        recall.append(temp_recall)
-
-        logging.info(
-            "{}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:3d}¦".format(short_names[idx], temp_precision, temp_recall,
-                                                                          np.median(re), np.median(te), n_valid))
-        # np.save(f'{est_folder}/{scenes[idx]}/flag.npy',c_flag)
-
-    weighted_precision = (np.array(n_valids) * np.array(precision)).sum() / np.sum(n_valids)
-
-    logging.info("Mean precision: {:.3f}: +- {:.3f}".format(np.mean(precision), np.std(precision)))
-    logging.info("Weighted precision: {:.3f}".format(weighted_precision))
-
-    logging.info(
-        "Mean median RRE: {:.3f}: +- {:.3f}".format(np.mean(re_per_scene['median']), np.std(re_per_scene['median'])))
-    logging.info(
-        "Mean median RTE: {:.3F}: +- {:.3f}".format(np.mean(te_per_scene['median']), np.std(te_per_scene['median'])))
-
-
 def eval_3DMatch(model, config, args):
     """
     Collect the evaluation results on each scene of 3DMatch testset, write the result to a .log file.
@@ -290,10 +217,6 @@ def eval_3DMatch(model, config, args):
                 f.writelines(lines)
 
     logging.info(f"Max memory allicated: {torch.cuda.max_memory_allocated() / 1024 ** 3:.2f}GB")
-
-    #benchmark_predator(all_poses, gt_folder='benchmarks/3DMatch')
-
-
 
     # result for each scene
     scene_vals = np.zeros([len(scene_list), 13])
@@ -394,7 +317,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--chosen_snapshot', default='HyperGCT_3DMatch_release', type=str, help='snapshot dir')
     parser.add_argument('--solver', default='SVD', type=str, choices=['SVD', 'RANSAC'])
-    parser.add_argument('--descriptor', default='fcgf', type=str, choices=['fcgf', 'predator'])
+    parser.add_argument('--descriptor', default='fcgf', type=str, choices=['fcgf', 'fpfh'])
     parser.add_argument('--num_points', default='all', type=str)
     parser.add_argument('--use_icp', default=False, type=str2bool)
     args = parser.parse_args()
@@ -421,7 +344,6 @@ if __name__ == '__main__':
 
     config.mode = "test"
     from snapshot.HyperGCT_3DMatch_release.mymodel import MethodName
-    #from models.mymodel_better_node import MethodName
     model = MethodName(config)
     miss = model.load_state_dict(torch.load(f'snapshot/{args.chosen_snapshot}/models/model_best.pkl'), strict=True)
     print(miss)
