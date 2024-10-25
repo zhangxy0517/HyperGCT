@@ -308,7 +308,6 @@ if __name__ == '__main__':
     parser.add_argument('--descriptor', default='fpfh', type=str, choices=['fcgf', 'predator'])
     parser.add_argument('--num_points', default='all', type=str)
     parser.add_argument('--use_icp', default=False, type=str2bool)
-    parser.add_argument('--save_npy', default=False, type=str2bool)
     args = parser.parse_args()
     print(args.chosen_snapshot)
 
@@ -328,34 +327,8 @@ if __name__ == '__main__':
                         format="")
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))   
 
-    ## load the model from models/PointDSC.py
-    # from models.PointDSC import PointDSC
-    # model = PointDSC(
-    #     in_dim=config.in_dim,
-    #     num_layers=config.num_layers,
-    #     num_channels=config.num_channels,
-    #     num_iterations=config.num_iterations,
-    #     ratio=config.ratio,
-    #     sigma_d=config.sigma_d,
-    #     k=config.k,
-    #     nms_radius=config.inlier_threshold,
-    # )
-
-
-    # from models.Hunter import Hunter
-    # model = Hunter(
-    #     in_dim=config.in_dim,
-    #     num_channels=config.num_channels,
-    #     num_iterations=config.num_iterations,
-    #     ratio=config.ratio,
-    #     sigma_d=0.1,
-    #     k=10,
-    #     nms_radius=config.inlier_threshold,
-    # )
-
     config.mode = "test"
     from snapshot.HyperGCT_3DMatch_release.mymodel import MethodName
-    #from models.mymodel_better_node import MethodName
     model = MethodName(config)
 
     miss = model.load_state_dict(torch.load(f'snapshot/{args.chosen_snapshot}/models/model_best.pkl'), strict=True)
@@ -364,8 +337,3 @@ if __name__ == '__main__':
 
     # evaluate on the test set
     stats = eval_3DMatch(model.cuda(), config, args)
-
-    if args.save_npy:
-        save_path = log_filename.replace('.log', '.npy')
-        np.save(save_path, stats)
-        print(f"Save the stats in {save_path}")
