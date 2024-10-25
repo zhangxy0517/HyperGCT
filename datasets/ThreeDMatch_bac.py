@@ -200,7 +200,7 @@ class ThreeDMatchTest(data.Dataset):
                  ):
         self.root = root
         self.descriptor = descriptor
-        assert descriptor in ['fcgf', 'fpfh', 'predator']
+        assert descriptor in ['fcgf', 'fpfh']
         self.in_dim = in_dim
         self.inlier_threshold = inlier_threshold
         self.num_node = num_node
