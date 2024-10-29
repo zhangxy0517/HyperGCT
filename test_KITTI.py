@@ -252,7 +252,7 @@ if __name__ == '__main__':
 
     config.descriptor = 'fpfh'
     config.mode = 'test'
-    from model.mymodel import MethodName
+    from models.mymodel import MethodName
     model = MethodName(config)
 
     miss = model.load_state_dict(torch.load(f'snapshot/{args.chosen_snapshot}/models/model_best.pkl'), strict=False)
