@@ -16,9 +16,8 @@ def str2bool(v):
     return v.lower() in ('true', '1')
 
 
-dataset = 'KITTI'
+dataset = '3DMatch'
 experiment_id = f"PointDSC_{dataset}_{time.strftime('%m%d%H%M')}"
-#experiment_id = f"PointDSC_{dataset}_07242005"
 # snapshot configurations
 snapshot_arg = add_argument_group('Snapshot')
 snapshot_arg.add_argument('--snapshot_dir', type=str, default=f'snapshot/{experiment_id}')
@@ -64,7 +63,6 @@ if dataset == '3DMatch':
     data_arg.add_argument('--root', type=str, default='/data/zxy/Threedmatch_dataset')
     data_arg.add_argument('--descriptor', type=str, default='fcgf', choices=['d3feat', 'fpfh', 'fcgf'])
     data_arg.add_argument('--inlier_threshold', type=float, default=0.10)
-    net_arg.add_argument('--sigma_d', type=float, default=0.10)
     data_arg.add_argument('--downsample', type=float, default=0.03)
     data_arg.add_argument('--re_thre', type=float, default=15, help='rotation error thrshold (deg)')
     data_arg.add_argument('--te_thre', type=float, default=30, help='translation error thrshold (cm)')
@@ -72,7 +70,6 @@ else:
     data_arg.add_argument('--root', type=str, default='/data/zxy/KITTI')
     data_arg.add_argument('--descriptor', type=str, default='fcgf', choices=['fcgf', 'fpfh'])
     data_arg.add_argument('--inlier_threshold', type=float, default=1.2)
-    net_arg.add_argument('--sigma_d', type=float, default=1.2)
     data_arg.add_argument('--downsample', type=float, default=0.30)
     data_arg.add_argument('--re_thre', type=float, default=5, help='rotation error thrshold (deg)')
     data_arg.add_argument('--te_thre', type=float, default=60, help='translation error thrshold (cm)')

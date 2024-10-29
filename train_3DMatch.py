@@ -109,7 +109,6 @@ if __name__ == '__main__':
     config.evaluate_metric = {
         "ClassificationLoss": ClassificationLoss(balanced=config.balanced),
         "SpectralMatchingLoss": SpectralMatchingLoss(balanced=config.balanced),
-        #"SpectralMatchingLoss": FeatureDifferenceLoss(balanced=config.balanced),
         "TransformationLoss": TransformationLoss(re_thresh=config.re_thre, te_thresh=config.te_thre),
         "HypergraphLoss": EdgeLoss(), #0612
     }

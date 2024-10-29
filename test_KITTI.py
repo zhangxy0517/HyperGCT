@@ -240,7 +240,6 @@ if __name__ == '__main__':
     config.te_thre = 60
     if args.dataset == 'KITTI_LC':
         config.inlier_threshold = 1.2
-        config.sigma_d = 1.2
         config.seed_ratio = 1.0
         if args.range == "10_20":
             config.te_thre = 120
@@ -248,7 +247,6 @@ if __name__ == '__main__':
             config.te_thre = 180
     elif args.dataset == 'KITTI_10m':
         config.inlier_threshold = 0.6
-        config.sigma_d = 0.6
 
     config.descriptor = 'fpfh'
     config.mode = 'test'

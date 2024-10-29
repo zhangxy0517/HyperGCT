@@ -341,8 +341,7 @@ class MethodName(nn.Module):
         self.nms_radius = config.inlier_threshold  # only used during testing
         self.ratio = config.seed_ratio
         self.sigma = nn.Parameter(torch.Tensor([1.0]).float(), requires_grad=True) # changes during training
-        self.sigma_d = config.sigma_d
-        #self.sigma_spat = nn.Parameter(torch.Tensor([self.sigma_d]).float(), requires_grad=False)
+        self.sigma_d = config.inlier_threshold
         self.k = 40  # neighborhood number in NSM module.
 
         self.classification = nn.Sequential(

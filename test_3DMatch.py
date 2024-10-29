@@ -327,7 +327,6 @@ if __name__ == '__main__':
     config = edict(config)
 
     config.inlier_threshold = 0.1
-    config.sigma_d = 0.1
     config.re_thre = 15
     config.te_thre = 30
 

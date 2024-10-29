@@ -268,7 +268,6 @@ if __name__ == '__main__':
     desc_name = 'fcgf'
     num_keypoints = 5000
     config.inlier_threshold = 0.1
-    config.sigma_d = 0.1
     config.re_thre, config.te_thre = 15, 30
     config.mode = 'test'
 
