@@ -235,7 +235,6 @@ dependencies:
       - markdown==3.6
       - matplotlib==3.7.5
       - matplotlib-inline==0.1.7
-      - minkowskiengine==0.5.4
       - nbformat==5.10.4
       - nest-asyncio==1.6.0
       - nibabel==5.2.1
@@ -290,4 +289,3 @@ dependencies:
       - widgetsnbextension==4.0.11
       - yacs==0.1.8
       - zipp==3.19.2
-prefix: /home/zxy/anaconda3/envs/HyperGCT
