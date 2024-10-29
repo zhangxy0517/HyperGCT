@@ -47,7 +47,7 @@ if __name__ == '__main__':
         open(os.path.join(config.snapshot_dir, 'config.json'), 'w'),
         indent=4,
     )
-    from models.mymodel_better_node import MethodName
+    from models.mymodel import MethodName
     config.mode = "train"
     config.model = MethodName(config)
     # create optimizer 
