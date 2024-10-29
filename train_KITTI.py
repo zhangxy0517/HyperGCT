@@ -36,7 +36,7 @@ if __name__ == '__main__':
     os.makedirs(config.save_dir, exist_ok=True)
     shutil.copy2(os.path.join('.', 'train_KITTI.py'), os.path.join(config.snapshot_dir, 'train.py'))
     shutil.copy2(os.path.join('.', 'libs/trainer.py'), os.path.join(config.snapshot_dir, 'trainer.py'))
-    shutil.copy2(os.path.join('.', 'models/mymodel_better_node.py'),
+    shutil.copy2(os.path.join('.', 'models/mymodel.py'),
                  os.path.join(config.snapshot_dir, 'mymodel.py'))  # for the model setting.
     shutil.copy2(os.path.join('.', 'libs/loss.py'), os.path.join(config.snapshot_dir, 'loss.py'))
     shutil.copy2(os.path.join('.', 'datasets/KITTI.py'), os.path.join(config.snapshot_dir, 'dataset.py'))
@@ -45,37 +45,10 @@ if __name__ == '__main__':
         open(os.path.join(config.snapshot_dir, 'config.json'), 'w'),
         indent=4,
     )
-
-    # create model
-    # config.model = PointDSC(
-    #     in_dim=config.in_dim,
-    #     num_layers=config.num_layers,
-    #     num_channels=config.num_channels,
-    #     num_iterations=config.num_iterations,
-    #     inlier_threshold=config.inlier_threshold,
-    #     sigma_d=config.sigma_d,
-    #     ratio=config.ratio,
-    #     k=config.k,
-    # )
-    from models.mymodel_better_node import MethodName
+    from models.mymodel import MethodName
 
     config.mode = "train"
     config.model = MethodName(config)
-
-    # from models.Hunter import Hunter
-    #
-    # config.mode = "train"
-    # config.model = Hunter(
-    #     in_dim=config.in_dim,
-    #     num_channels=config.num_channels,
-    #     num_iterations=config.num_iterations,
-    #     ratio=config.ratio,
-    #     sigma_d=config.sigma_d,
-    #     k=config.k,
-    #     nms_radius=config.inlier_threshold,
-    #     config=config
-    # )
-
     # create optimizer
     if config.optimizer == 'SGD':
         config.optimizer = optim.SGD(
