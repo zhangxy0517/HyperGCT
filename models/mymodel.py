@@ -1,4 +1,3 @@
-#import networkx as nx
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,10 +7,6 @@ from models.common import knn, rigid_transform_3d
 from utils.SE3 import transform
 from utils.timer import Timer
 import math
-
-
-#from igraph import *
-
 
 #torch.autograd.set_detect_anomaly(True)
 
@@ -404,20 +399,6 @@ class MethodName(nn.Module):
             del FCG
 
         F0 = corr
-        # TODO structure of initial feature: 1. using more information 2. invariant or equivariant
-        # 1、sin cos embedding
-        # F0 = torch.cat([corr, torch.sin(corr), torch.cos(corr)], dim=-1) # position embedding 0708
-        # 2、relative pose embedding
-        # 根据W选出每行topk的匹配
-        # k = 10
-        # idx = W.topk(k=k, dim=-1)[1]  # (bs, num_points, k)
-        # idx = idx.view(-1) # (bs * num_point * k)
-        # idx_corr = corr.view(bs * num_corr, -1)[idx, :] # (bs * num_points * k, dim)
-        # idx_corr = idx_corr.view(bs, num_corr, k, num_dim)
-        # corr = corr.view(bs, num_corr, 1, num_dim)
-        # # 计算relative pose,得到特征
-        # F0 = (idx_corr - corr).view(bs, num_corr, k * num_dim)
-
         raw_H, H, edge_score, corr_feats = self.encoder(F0.permute(0, 2, 1), W)  # bs, dim, num_corr
         confidence = self.classification(corr_feats).squeeze(1)  # bs, 1, num_corr-> bs, num_corr loss has sigmoid
 
