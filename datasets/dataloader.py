@@ -16,7 +16,6 @@ def collate_fn(list_data):
     batched_gt_labels = []
     batched_src_normal = []
     batched_tgt_normal = []
-    #batched_score = []
     for ind, (corr_pos, src_keypts, tgt_keypts, src_normal, tgt_normal, gt_trans, gt_labels, scene, src_id, tgt_id) in enumerate(list_data):
         sel_ind = np.random.choice(len(gt_labels), min_num, replace=False)
         batched_corr_pos.append(corr_pos[sel_ind, :][None,:,:])
@@ -26,7 +25,6 @@ def collate_fn(list_data):
         batched_gt_labels.append(gt_labels[sel_ind][None, :])
         batched_src_normal.append(src_normal[sel_ind, :][None, :, :])
         batched_tgt_normal.append(tgt_normal[sel_ind, :][None, :, :])
-        #batched_score.append(score[sel_ind][None, :])
     
     batched_corr_pos = torch.from_numpy(np.concatenate(batched_corr_pos, axis=0))
     batched_src_keypts = torch.from_numpy(np.concatenate(batched_src_keypts, axis=0))
@@ -35,7 +33,6 @@ def collate_fn(list_data):
     batched_gt_labels = torch.from_numpy(np.concatenate(batched_gt_labels, axis=0))
     batched_src_normal = torch.from_numpy(np.concatenate(batched_src_normal, axis=0))
     batched_tgt_normal = torch.from_numpy(np.concatenate(batched_tgt_normal, axis=0))
-    #batched_score = torch.from_numpy(np.concatenate(batched_score, axis=0))
     return batched_corr_pos, batched_src_keypts, batched_tgt_keypts, batched_src_normal, batched_tgt_normal, batched_gt_trans, batched_gt_labels, scene, src_id, tgt_id
 
 
@@ -54,7 +51,6 @@ def collate_fn1(list_data):
     batched_src_normal = []
     batched_tgt_normal = []
     batched_filename = []
-    # batched_score = []
     for ind, (corr_pos, src_keypts, tgt_keypts, src_normal, tgt_normal, gt_trans, gt_labels, filename) in enumerate(list_data):
         sel_ind = np.random.choice(len(gt_labels), min_num, replace=False)
         batched_corr_pos.append(corr_pos[sel_ind, :][None, :, :])
@@ -64,7 +60,6 @@ def collate_fn1(list_data):
         batched_gt_labels.append(gt_labels[sel_ind][None, :])
         batched_src_normal.append(src_normal[sel_ind, :][None, :, :])
         batched_tgt_normal.append(tgt_normal[sel_ind, :][None, :, :])
-        # batched_score.append(score[sel_ind][None, :])
 
     batched_corr_pos = torch.from_numpy(np.concatenate(batched_corr_pos, axis=0))
     batched_src_keypts = torch.from_numpy(np.concatenate(batched_src_keypts, axis=0))
@@ -73,7 +68,6 @@ def collate_fn1(list_data):
     batched_gt_labels = torch.from_numpy(np.concatenate(batched_gt_labels, axis=0))
     batched_src_normal = torch.from_numpy(np.concatenate(batched_src_normal, axis=0))
     batched_tgt_normal = torch.from_numpy(np.concatenate(batched_tgt_normal, axis=0))
-    # batched_score = torch.from_numpy(np.concatenate(batched_score, axis=0))
     return batched_corr_pos, batched_src_keypts, batched_tgt_keypts, batched_src_normal, batched_tgt_normal, batched_gt_trans, batched_gt_labels, filename
 
 
