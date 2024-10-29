@@ -9,8 +9,8 @@ import open3d as o3d
 from tqdm import tqdm
 from easydict import EasyDict as edict
 from libs.loss import *
-from datasets.ThreeDMatch_bac import ThreeDLOMatchTest
-from datasets.dataloader_bac import get_dataloader
+from datasets.ThreeDMatch import ThreeDLOMatchTest
+from datasets.dataloader import get_dataloader
 from utils.pointcloud import make_point_cloud
 from evaluation.benchmark_utils import set_seed, icp_refine
 from evaluation.benchmark_utils_predator import *
@@ -328,7 +328,7 @@ if __name__ == '__main__':
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))   
 
     config.mode = "test"
-    from snapshot.HyperGCT_3DMatch_release.mymodel import MethodName
+    from models.mymodel import MethodName
     model = MethodName(config)
 
     miss = model.load_state_dict(torch.load(f'snapshot/{args.chosen_snapshot}/models/model_best.pkl'), strict=True)
