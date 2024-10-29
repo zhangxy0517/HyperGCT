@@ -10,10 +10,7 @@ import glob
 import math
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
-
 import torch
-from models.mymodel_better_node import MethodName
 from utils.pointcloud import make_point_cloud, estimate_normal_gpu
 from utils.SE3 import *
 
@@ -275,7 +272,7 @@ if __name__ == '__main__':
     config.re_thre, config.te_thre = 15, 30
     config.mode = 'test'
 
-    from models.mymodel_better_node import MethodName
+    from models.mymodel import MethodName
 
     model = MethodName(config)
     miss = model.load_state_dict(torch.load(f'snapshot/{chosen_snapshot}/models/model_best.pkl'), strict=True)
