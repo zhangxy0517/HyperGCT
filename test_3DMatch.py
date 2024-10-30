@@ -211,11 +211,6 @@ def eval_3DMatch(model, config, args):
         else:
             all_poses = np.concatenate([all_poses, scene_poses], axis=0)
         all_stats[scene] = scene_stats
-        # save to file
-        with open('logs/3dmatch/'+args.descriptor+'.txt','a') as f:
-            for i in range(len(scene_poses)):
-                lines = [scene,' ' ,'cloud_bin_'+str(int(scene_stats[i][11]))+'+cloud_bin_'+str(int(scene_stats[i][12])), ' ',str(scene_stats[i][0]),' ', str(scene_stats[i][1]),' ', str(scene_stats[i][2]),'\n', str(scene_poses[i]),'\n']
-                f.writelines(lines)
 
     logging.info(f"Max memory allicated: {torch.cuda.max_memory_allocated() / 1024 ** 3:.2f}GB")
 

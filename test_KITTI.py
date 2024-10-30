@@ -139,11 +139,7 @@ def eval_KITTI_per_pair(model, dloader, config, args):
             eval_cnt[seq] += 1
             eval_all += recall / 100.0
             torch.cuda.empty_cache()
-            with open(f'logs/{args.dataset}/' + config.descriptor + '.txt', 'a') as f:
-                lines = [str(i), ' ',
-                         str(stats[i][0]), ' ', str(stats[i][1]), ' ', str(stats[i][2]),
-                         '\n', str(pred_trans[0].detach().cpu().numpy()), '\n']
-                f.writelines(lines)
+            
 
     print(seed_precision / num_pair)
     print(seed_num / num_pair)

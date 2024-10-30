@@ -150,12 +150,6 @@ def eval_3DMatch_scene(model, scene_ind, dloader, config, args):
             final_poses[i] = pred_trans[0].detach().cpu().numpy()
             torch.cuda.empty_cache()
 
-            with open('logs/3dlomatch/' + args.descriptor + '.txt', 'a') as f:
-                lines = [scene, ' ',
-                         'cloud_bin_' + str(int(stats[i][11])) + '+cloud_bin_' + str(int(stats[i][12])),
-                         ' ', str(stats[i][0]), ' ', str(stats[i][1]), ' ', str(stats[i][2]),
-                         '\n', str(final_poses[i]), '\n']
-                f.writelines(lines)
 
     font1 = {
         'family': 'Times New Roman',
