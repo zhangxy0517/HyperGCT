@@ -6,7 +6,7 @@ from config import get_config
 from easydict import EasyDict as edict
 from libs.loss import *
 from datasets.KITTI import KITTIDataset
-from datasets.dataloader import get_dataloader
+from datasets.dataloader import get_dataloader_train
 from libs.trainer import Trainer
 from torch import optim
 
@@ -16,6 +16,8 @@ if __name__ == '__main__':
     for k in dconfig:
         print(f"    {k}: {dconfig[k]}")
     config = edict(dconfig)
+    # change the dataset path here
+    config.root = ''
 
     resume = False
     if resume:
@@ -95,11 +97,11 @@ if __name__ == '__main__':
                                   augment_rotation=config.augment_rotation,
                                   augment_translation=config.augment_translation,
                                   )
-    config.train_loader = get_dataloader(dataset=train_set,
+    config.train_loader = get_dataloader_train(dataset=train_set,
                                          batch_size=config.batch_size,
                                          num_workers=config.num_workers,
                                          )
-    config.val_loader = get_dataloader(dataset=val_set,
+    config.val_loader = get_dataloader_train(dataset=val_set,
                                        batch_size=config.batch_size,
                                        num_workers=config.num_workers,
                                        )
