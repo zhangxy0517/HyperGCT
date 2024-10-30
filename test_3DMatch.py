@@ -292,7 +292,7 @@ def eval_3DMatch(model, config, args):
     [label.set_fontname('Times New Roman') for label in labels]
     plt.tight_layout()
     plt.savefig(f'snapshot/{args.chosen_snapshot}/Match_{args.descriptor}_{args.num_points}.png')
-    plt.show()
+    #plt.show()
 
     all_stats_npy = np.concatenate([v for k, v in all_stats.items()], axis=0)
     print(avg_seed_num / 1623, avg_seed_precision / 1623)

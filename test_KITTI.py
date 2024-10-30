@@ -171,7 +171,7 @@ def eval_KITTI_per_pair(model, dloader, config, args):
     ax2.set_ylim(0, 500)
     plt.tight_layout()
     plt.savefig(f'snapshot/{args.chosen_snapshot}/KITTI_{config.descriptor}.png')
-    plt.show()
+    #plt.show()
     return stats
 
 
