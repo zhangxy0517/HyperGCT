@@ -184,11 +184,12 @@ def eval_3DMatch(model, config, args):
     avg_seed_precision = 0
     avg_correct_num = 0
     avg_correct_ratio = 0
+    os.makedirs('logs/3dmatch', exist_ok=True)
     if os.path.isfile('logs/3dmatch/'+args.descriptor+'.txt'):
         os.remove('logs/3dmatch/'+args.descriptor+'.txt')
         print("File Deleted successfully")
     for scene_ind, scene in enumerate(scene_list):
-        dset = ThreeDMatchTest(root='/data/zxy/Threedmatch_dataset',
+        dset = ThreeDMatchTest(root=config.root,
                                descriptor=args.descriptor,
                                in_dim=config.in_dim,
                                inlier_threshold=config.inlier_threshold,
@@ -255,18 +256,6 @@ def eval_3DMatch(model, config, args):
     logging.info(f"\tOutput: Mean Inlier Num={allpair_average[5]:.2f}(precision={allpair_average[6] * 100:.2f}%, recall={allpair_average[7] * 100:.2f}%, f1={allpair_average[8] * 100:.2f}%)")
     logging.info(f"\tMean model time: {allpair_average[9]:.2f}s, Mean data time: {allpair_average[10]:.2f}s")
 
-    # inlier ratio level average
-    # if args.descriptor == "fpfh":
-    #     inlier_thresh = 0.05
-    # elif args.descriptor == "fcgf":
-    #     inlier_thresh = 0.1
-    #
-    # below_thresh_pairs = allpair_stats[allpair_stats[:, 4] <= inlier_thresh]
-    # below_thresh_pairs_average = below_thresh_pairs.mean(0)
-    # correct_below_thresh_pairs_average = below_thresh_pairs[below_thresh_pairs[:, 0] == 1].mean(0)
-    # logging.info(
-    #     f"All {below_thresh_pairs.shape[0]} pairs, Mean Reg Recall={below_thresh_pairs_average[0] * 100:.2f}%, Mean Re={correct_below_thresh_pairs_average[1]:.2f}, Mean Te={correct_below_thresh_pairs_average[2]:.2f}")
-
     font1 = {
         'family':'Times New Roman',
         'weight':'normal',
@@ -329,6 +318,8 @@ if __name__ == '__main__':
     config.inlier_threshold = 0.1
     config.re_thre = 15
     config.te_thre = 30
+    # change the dataset path here
+    config.root = '/media/SSD/PCR_methods/SC2-PCR-main/data'
 
 
     if args.use_icp:

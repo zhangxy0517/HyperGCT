@@ -176,7 +176,7 @@ def eval_KITTI_per_pair(model, dloader, config, args):
 
 
 def eval_KITTI(model, config, args):
-    dset = KITTIDatasetTest(root='/data/zxy/KITTI',
+    dset = KITTIDatasetTest(root=config.root,
                         split='test',
                         descriptor=config.descriptor,
                         inlier_threshold=config.inlier_threshold,
@@ -188,6 +188,7 @@ def eval_KITTI(model, config, args):
                         args=args
                         )
     dloader = get_dataloader_lc(dset, batch_size=1, num_workers=8, shuffle=False)
+    os.makedirs(f'logs/{args.dataset}', exist_ok=True)
     if os.path.isfile(f'logs/{args.dataset}/{config.descriptor}.txt'):
         os.remove(f'logs/{args.dataset}/{config.descriptor}.txt')
         print("File Deleted successfully")
@@ -247,7 +248,8 @@ if __name__ == '__main__':
             config.te_thre = 180
     elif args.dataset == 'KITTI_10m':
         config.inlier_threshold = 0.6
-
+    # change the dataset path here
+    # config.root = ''
     config.descriptor = 'fpfh'
     config.mode = 'test'
     from models.mymodel import MethodName

@@ -209,6 +209,7 @@ def eval_3DMatch(model, config, args):
                             augment_translation=0.0,
                             )
     dloader = get_dataloader(dset, batch_size=1, num_workers=8, shuffle=False)
+    os.makedirs('logs/3dlomatch', exist_ok=True)
     if os.path.isfile('logs/3dlomatch/'+args.descriptor+'.txt'):
         os.remove('logs/3dlomatch/'+args.descriptor+'.txt')
         print("File Deleted successfully")
@@ -228,8 +229,8 @@ def eval_3DMatch(model, config, args):
 
     # benchmarking using the registration recall defined in 3DMatch to compare with Predator
     # np.save('predator.npy', allpair_poses)
-
-    benchmark_predator(allpair_poses, gt_folder='benchmarks/3DLoMatch')
+    if args.descriptor == 'predator':
+        benchmark_predator(allpair_poses, gt_folder='benchmarks/3DLoMatch')
 
     return allpair_stats
 
@@ -317,8 +318,11 @@ if __name__ == '__main__':
     config.inlier_threshold = 0.1
     config.re_thre = 15
     config.te_thre = 30
+    # change the dataset path here
+    config.root = '/media/SSD/PCR_methods/SC2-PCR-main/data'
     if args.descriptor == 'predator':
         config.root = '/data/zxy/Predator/snapshot/indoor/3DLoMatch'
+    
     log_filename = f'logs/3DLoMatch_{args.chosen_snapshot}-{args.descriptor}-{args.num_points}.log'
     logging.basicConfig(level=logging.INFO,
                         filename=log_filename,
