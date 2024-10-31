@@ -55,6 +55,7 @@ class Trainer(object):
             start_epoch = 0
             best_reg_recall = 0
             best_F1 = 0
+            print('Warning: Retrain the model may not produce the same results!')
 
         start_time = time.time()
         self.model.train()
