@@ -24,10 +24,10 @@ if __name__ == '__main__':
 
     resume = False
     if resume:
-        start_epoch = 31
-        best_reg_recall = 95.31
-        best_F1 = 0.73
-        experiment_id = "PointDSC_3DMatch_08121534"
+        start_epoch = 0
+        best_reg_recall = 0
+        best_F1 = 0
+        experiment_id = ""
         config.snapshot_dir = f'snapshot/{experiment_id}'
         config.tboard_dir = f'tensorboard/{experiment_id}'
         config.save_dir = os.path.join(f'snapshot/{experiment_id}', 'models/')

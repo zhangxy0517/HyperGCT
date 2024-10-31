@@ -24,7 +24,7 @@ if __name__ == '__main__':
         start_epoch = 0
         best_reg_recall = 0
         best_F1 = 0
-        experiment_id = "PointDSC_3DMatch_08081443"
+        experiment_id = ""
         config.snapshot_dir = f'snapshot/{experiment_id}'
         # config.tboard_dir = f'tensorboard/{experiment_id}'
         # config.save_dir = os.path.join(f'snapshot/{experiment_id}', 'models/')
