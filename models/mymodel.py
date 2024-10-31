@@ -364,13 +364,10 @@ class MethodName(nn.Module):
         corr, src_pts, tgt_pts, src_normal, tgt_normal = (
             input_data['corr_pos'], input_data['src_keypts'], input_data['tgt_keypts'], input_data['src_normal'],
             input_data['tgt_normal'])
-        gt_labels = None
-        if self.config.mode == "test":
-            gt_labels = input_data['labels']
+        
         bs, num_corr, num_dim = corr.size()
         FCG_K = int(num_corr * 0.1)
-        #timer = Timer()
-        #timer.tic()
+        
         with torch.no_grad():
             # pairwise distance compute
 
@@ -413,15 +410,7 @@ class MethodName(nn.Module):
             M[:, torch.arange(M.shape[1]), torch.arange(M.shape[1])] = 0
 
         if self.config.mode == "test":
-
-            #seeds = self.pick_seeds(dists=src_dist, scores=confidence, R=self.nms_radius, max_num=int(num_corr * self.ratio))
             seeds = self.graph_filter(H=H, confidence=confidence, max_num=int(num_corr * self.ratio))
-            #seeds_label = torch.gather(gt_labels, 1, seeds)
-            # print(seeds_label.sum(1))
-            # TODO bs 只能为1
-            # if seeds_label.sum(dim=1) > 0:
-            #     seeds = seeds[seeds_label > 0][None]
-
         else:
             seeds = torch.argsort(confidence, dim=1, descending=True)[:, 0:int(num_corr * self.ratio)]
 
@@ -449,39 +438,6 @@ class MethodName(nn.Module):
             "confidence": confidence,
             "sampled_trans": sampled_trans
         }
-
-
-        # if self.config.mode == "test":
-        #     seeds = self.pick_seeds(src_dist, confidence, R=self.nms_radius, max_num=int(num_corr * self.ratio))
-        # else:
-        #     seeds = torch.argsort(confidence, dim=1, descending=True)[:, 0: int(num_corr * self.ratio)]
-        #################################
-        # Step 3 & 4: calculate transformation matrix for each seed, and find the best hypothesis.
-        #################################
-        # seedwise_trans, final_fitness, final_trans, final_labels = self.cal_seed_trans(seeds, H, corr_feats.permute(0, 2, 1), src_pts, tgt_pts,
-        #                                                                                             src_normal, tgt_normal)
-        # # post refinement (only used during testing and bs == 1)
-        # warped_src_keypts = transform(src_pts, final_trans)
-        # L2_dis = torch.norm(warped_src_keypts - tgt_pts, dim=-1)
-        # final_labels = (L2_dis < self.inlier_threshold).float()
-        #
-        # if self.config.mode == "test":
-        #     final_trans = self.post_refinement(final_trans, src_pts, tgt_pts)
-        #
-        # if not self.config.mode == "test":
-        #     final_labels = confidence
-        # res = {
-        #     "raw_H": raw_H,
-        #     "hypergraph": H,
-        #     "edge_score": edge_score,
-        #     "final_trans": final_trans,
-        #     "final_labels": final_labels,
-        #     'final_fitness':final_fitness,
-        #     'seedwise_trans':seedwise_trans,
-        #     'seeds': seeds,
-        #     "confidence": confidence,
-        # }
-
         return res
 
     def graph_matrix_reconstruct(self, H, thresh=1, seeds=None):
@@ -769,221 +725,3 @@ class MethodName(nn.Module):
                 # weights=((1-L2_dis/inlier_threshold)**2)[:, pred_inlier]
             )
         return initial_trans
-
-    ###################################################new backend###############################################
-    def pick_seeds(self, dists, scores, R, max_num):
-        """
-        Select seeding points using Non Maximum Suppression. (here we only support bs=1)
-        Input:
-            - dists:       [bs, num_corr, num_corr] src keypoints distance matrix
-            - scores:      [bs, num_corr]     initial confidence of each correspondence
-            - R:           float              radius of nms
-            - max_num:     int                maximum number of returned seeds
-        Output:
-            - picked_seeds: [bs, num_seeds]   the index to the seeding correspondences
-        """
-        assert scores.shape[0] == 1
-        # parallel Non Maximum Suppression (more efficient)
-        score_relation = scores.T >= scores  # [num_corr, num_corr], save the relation of leading_eig
-        # score_relation[dists[0] >= R] = 1  # mask out the non-neighborhood node
-        score_relation = score_relation.bool() | (dists[0] >= R).bool()
-        is_local_max = score_relation.min(-1)[0].float()
-        return torch.argsort(scores * is_local_max, dim=1, descending=True)[:, 0:max_num].detach()
-
-    def iter_gen_hypos(self, L2_dis, src_keypts, tgt_keypts, src_normal, tgt_normal):
-        bs = L2_dis.shape[0]
-
-        m, k = 40, 6
-        all_trans = []
-        all_fitness = []
-        all_inliers_mask = []
-
-        for it in range(10):
-            bias, knn_idx = torch.topk(L2_dis, m, -1, largest=False)
-            knn_idx1 = knn_idx[:, :, m - k:]
-
-            src_knn = src_keypts.gather(dim=1, index=knn_idx1.reshape([bs, -1])[:, :, None].expand(-1, -1, 3)).view(
-                [bs, -1, k, 3])  # [bs, num_seeds, k, 3]
-            tgt_knn = tgt_keypts.gather(dim=1, index=knn_idx1.reshape([bs, -1])[:, :, None].expand(-1, -1, 3)).view(
-                [bs, -1, k, 3])  # [bs, num_seeds, k, 3]
-
-            src_knn, tgt_knn = src_knn.view([-1, k, 3]), tgt_knn.view([-1, k, 3])
-            #
-            seedwise_trans1 = rigid_transform_3d(src_knn, tgt_knn)
-            seedwise_trans1 = seedwise_trans1.view([bs, -1, 4, 4])
-            pred_position = torch.einsum('bsnm,bmk->bsnk', seedwise_trans1[:, :, :3, :3],
-                                         src_keypts.permute(0, 2, 1)) + seedwise_trans1[:, :, :3,
-                                                                        3:4]  # [bs, num_seeds, num_corr, 3]
-            pred_position = pred_position.permute(0, 1, 3, 2)
-            L2_dis = torch.norm(pred_position - tgt_keypts[:, None, :, :], dim=-1)  # [bs, num_seeds, num_corr]
-            inliers_mask = L2_dis < self.inlier_threshold
-
-            inliers_fitness = torch.mean(inliers_mask.float(), dim=-1)
-            all_inliers_mask.append(inliers_mask)
-            all_trans.append(seedwise_trans1)
-            all_fitness.append(inliers_fitness)
-
-        all_trans = torch.cat(all_trans, 1)
-        all_fitness = torch.cat(all_fitness, 1)
-        all_inliers_mask = torch.cat(all_inliers_mask, 1)
-
-        return all_fitness, all_trans, all_inliers_mask
-
-
-    def cal_seed_trans(self, seeds, H, corr_features, src_keypts, tgt_keypts, src_normal, tgt_normal):
-        """
-        Calculate the transformation for each seeding correspondences.
-        Input:
-            - seeds:         [bs, num_seeds]              the index to the seeding correspondence
-            - corr_features: [bs, num_corr, num_channels]
-            - src_keypts:    [bs, num_corr, 3]
-            - tgt_keypts:    [bs, num_corr, 3]
-        Output: leading eigenvector
-            - pairwise_trans:    [bs, num_seeds, 4, 4]  transformation matrix for each seeding point.
-            - pairwise_fitness:  [bs, num_seeds]        fitness (inlier ratio) for each seeding point
-            - final_trans:       [bs, 4, 4]             best transformation matrix (after post refinement) for each batch.
-            - final_labels:      [bs, num_corr]         inlier/outlier label given by best transformation matrix.
-        """
-
-        bs, num_corr, num_channels = corr_features.shape[0], corr_features.shape[1], corr_features.shape[2]
-        num_seeds = seeds.shape[-1]
-
-        k = min(10, num_corr - 1)
-        mask = H  # self.graph_matrix_reconstruct(H, 0, None)
-        feature_distance = 1 - torch.matmul(corr_features, corr_features.transpose(2, 1))  # normalized
-        masked_feature_distance = feature_distance * mask.float() + (1 - mask.float()) * float(1e9)
-        knn_idx = torch.topk(masked_feature_distance, k, largest=False)[1]
-        knn_idx = knn_idx.gather(dim=1, index=seeds[:, :, None].expand(-1, -1, k))  # [bs, num_seeds, k]
-        # 初始假设更精确
-        #################################
-        # construct the feature consistency matrix of each correspondence subset.
-        #################################
-        knn_features = corr_features.gather(dim=1,
-                                            index=knn_idx.view([bs, -1])[:, :, None].expand(-1, -1, num_channels)).view(
-            [bs, -1, k, num_channels])  # [bs, num_seeds, k, num_channels]
-        knn_M = torch.matmul(knn_features, knn_features.permute(0, 1, 3, 2))
-        knn_M = torch.clamp(1 - (1 - knn_M) / self.sigma ** 2, min=0)
-        knn_M = knn_M.view([-1, k, k])
-        feature_knn_M = knn_M
-
-        #################################
-        # construct the spatial consistency matrix of each correspondence subset.
-        #################################
-        src_knn = src_keypts.gather(dim=1, index=knn_idx.view([bs, -1])[:, :, None].expand(-1, -1, 3)).view(
-            [bs, -1, k, 3])  # [bs, num_seeds, k, 3]
-        tgt_knn = tgt_keypts.gather(dim=1, index=knn_idx.view([bs, -1])[:, :, None].expand(-1, -1, 3)).view(
-            [bs, -1, k, 3])
-        knn_M = ((src_knn[:, :, :, None, :] - src_knn[:, :, None, :, :]) ** 2).sum(-1) ** 0.5 - (
-                (tgt_knn[:, :, :, None, :] - tgt_knn[:, :, None, :, :]) ** 2).sum(-1) ** 0.5
-        knn_M = torch.clamp(1 - knn_M ** 2 / self.sigma_d ** 2, min=0)
-        knn_M = knn_M.view([-1, k, k])
-        spatial_knn_M = knn_M
-
-        #################################
-        # Power iteratation to get the inlier probability
-        #################################
-        total_knn_M = feature_knn_M * spatial_knn_M  # 有用
-        total_knn_M[:, torch.arange(total_knn_M.shape[1]), torch.arange(total_knn_M.shape[1])] = 0
-        total_weight = self.cal_leading_eigenvector(total_knn_M, method='power')
-        total_weight = total_weight.view([bs, -1, k])
-        total_weight = total_weight / (torch.sum(total_weight, dim=-1, keepdim=True) + 1e-6)
-        total_weight = total_weight.view([-1, k])
-
-
-        # k = 6
-        # knn_idx = knn(corr_features, k=k, ignore_self=True, normalized=True)  # [bs, num_corr, k]
-        # knn_idx = knn_idx.gather(dim=1, index=seeds[:, :, None].expand(-1, -1, k))  # [bs, num_seeds, k]
-        # k = knn_idx.shape[-1]
-
-        # print(src_keypts.shape)
-        #################################
-        # construct the feature consistency matrix of each correspondence subset.
-        #################################
-
-        # src_knn = src_keypts.gather(dim=1, index=knn_idx.view([bs, -1])[:, :, None].expand(-1, -1, 3)).view(
-        #     [bs, -1, k, 3])  # [bs, num_seeds, k, 3]
-        # tgt_knn = tgt_keypts.gather(dim=1, index=knn_idx.view([bs, -1])[:, :, None].expand(-1, -1, 3)).view(
-        #     [bs, -1, k, 3])  # [bs, num_seeds, k, 3]
-        src_knn, tgt_knn = src_knn.view([-1, k, 3]), tgt_knn.view([-1, k, 3])
-
-        # not use seeds as neighborhood centers.
-        seedwise_trans = rigid_transform_3d(src_knn, tgt_knn, total_weight)
-        seedwise_trans = seedwise_trans.view([bs, -1, 4, 4])
-
-        #################################
-        # calculate the inlier number for each hypothesis, and find the best transformation for each point cloud pair
-        #################################
-        pred_position = torch.einsum('bsnm,bmk->bsnk', seedwise_trans[:, :, :3, :3],
-                                     src_keypts.permute(0, 2, 1)) + seedwise_trans[:, :, :3,
-                                                                    3:4]  # [bs, num_seeds, num_corr, 3]
-        pred_position = pred_position.permute(0, 1, 3, 2)
-        L2_dis = torch.norm(pred_position - tgt_keypts[:, None, :, :], dim=-1)  # [bs, num_seeds, num_corr]
-
-        inliers_mask = L2_dis < self.inlier_threshold
-        inliers_fitness = self.cal_inliers_normal(inliers_mask, seedwise_trans, src_normal, tgt_normal)
-
-        h = int(num_seeds * 0.20)
-        hypo_inliers_scores, hypo_inliers_idx = torch.topk(inliers_fitness, h, -1, largest=True)
-        seedwise_trans = seedwise_trans.gather(1, hypo_inliers_idx[:, :, None, None].repeat(1, 1, 4, 4))
-        # if hypo_inliers_scores[0, 0] > 0.2:
-        #     seedwise_fitness = hypo_inliers_scores
-        #else:
-        part_L2_dis = L2_dis.gather(1, hypo_inliers_idx[:, :, None].repeat(1, 1, L2_dis.shape[-1]))
-        inliers_mask = part_L2_dis < self.inlier_threshold
-        inliers_fitness1, seedwise_trans1, inliers_mask1 = self.iter_gen_hypos(part_L2_dis, src_keypts, tgt_keypts,
-                                                                               src_normal, tgt_normal)
-        seedwise_trans = torch.cat([seedwise_trans, seedwise_trans1], 1)
-        inliers_mask = torch.cat([inliers_mask, inliers_mask1], 1)
-        seedwise_fitness = self.cal_inliers_normal(inliers_mask, seedwise_trans, src_normal, tgt_normal)
-
-        batch_best_guess = seedwise_fitness.argmax(dim=1)
-        final_trans = seedwise_trans.gather(dim=1,
-                                            index=batch_best_guess[:, None, None, None].expand(-1, -1, 4, 4)).squeeze(1)
-
-        final_labels = torch.ones([bs, num_corr], device=src_keypts.device)
-
-        # final_labels = L2_dis.gather(dim=1,
-        #                             index=batch_best_guess[:, None, None].expand(-1, -1, L2_dis.shape[2])).squeeze(1)
-
-        final_labels = (final_labels < self.inlier_threshold).float()
-
-        return seedwise_trans, seedwise_fitness[0, batch_best_guess[0]], final_trans, final_labels
-
-    # def post_refinement(self, initial_trans, src_keypts, tgt_keypts, weights=None):
-    #     """
-    #     Perform post refinement using the initial transformation matrix, only adopted during testing.
-    #     Input
-    #         - initial_trans: [bs, 4, 4]
-    #         - src_keypts:    [bs, num_corr, 3]
-    #         - tgt_keypts:    [bs, num_corr, 3]
-    #         - weights:       [bs, num_corr]
-    #     Output:
-    #         - final_trans:   [bs, 4, 4]
-    #     """
-    #     assert initial_trans.shape[0] == 1
-    #     if self.inlier_threshold == 0.10:  # for 3DMatch
-    #         inlier_threshold_list = [0.10] * 20  # 5 95.32
-    #     else:  # for KITTI
-    #         inlier_threshold_list = [1.2] * 20
-    #
-    #     previous_inlier_num = 0
-    #     for inlier_threshold in inlier_threshold_list:
-    #         warped_src_keypts = transform(src_keypts, initial_trans)
-    #         L2_dis = torch.norm(warped_src_keypts - tgt_keypts, dim=-1)
-    #         MAE_score = (inlier_threshold - L2_dis) / inlier_threshold
-    #         inlier_num = torch.sum(MAE_score * (L2_dis < inlier_threshold), dim=-1)[0]
-    #         pred_inlier = (L2_dis < inlier_threshold)[0]  # assume bs = 1
-    #         #inlier_num = torch.sum(pred_inlier)
-    #         if inlier_num <= previous_inlier_num:
-    #             break
-    #         else:
-    #             previous_inlier_num = inlier_num
-    #         initial_trans = rigid_transform_3d(
-    #             A=src_keypts[:, pred_inlier, :],
-    #             B=tgt_keypts[:, pred_inlier, :],
-    #             ## https://link.springer.com/article/10.1007/s10589-014-9643-2
-    #             # weights=None,
-    #             weights=1 / (1 + (L2_dis / inlier_threshold) ** 2)[:, pred_inlier],
-    #             # weights=((1-L2_dis/inlier_threshold)**2)[:, pred_inlier]
-    #         )
-    #     return initial_trans
