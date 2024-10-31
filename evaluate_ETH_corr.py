@@ -270,6 +270,8 @@ if __name__ == '__main__':
     config.inlier_threshold = 0.1
     config.re_thre, config.te_thre = 15, 30
     config.mode = 'test'
+    # change the dataset path here
+    root = '/data/zxy/ETH'
 
     from models.mymodel import MethodName
 
@@ -281,11 +283,11 @@ if __name__ == '__main__':
     model.eval()
 
     for scene in scene_list:
-        pcdpath = f"/data/zxy/ETH/data/{scene}/"
-        interpath = f"/data/zxy/ETH/data/{scene}/01_Keypoints/"
-        gtpath = f'/data/zxy/ETH/data/{scene}/'
+        pcdpath = f"{root}/data/{scene}/"
+        interpath = f"{root}/data/{scene}/01_Keypoints/"
+        gtpath = f'{root}/data/{scene}/'
         keyptspath = interpath  # os.path.join(interpath, "keypoints/")
-        descpath = os.path.join("/data/zxy/ETH/descriptor", f"SpinNet_desc_{desc_name}/{scene}")
+        descpath = os.path.join(f"{root}/descriptor", f"SpinNet_desc_{desc_name}/{scene}")
         logpath = f"logs/eth/{scene}-evaluation"
         gtLog = loadlog(gtpath)
         resultpath = os.path.join("./ETH", f"SpinNet_result_{desc_name}/{scene}")
