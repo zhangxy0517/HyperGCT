@@ -17,7 +17,7 @@ def str2bool(v):
 
 
 dataset = '3DMatch'
-experiment_id = f"PointDSC_{dataset}_{time.strftime('%m%d%H%M')}"
+experiment_id = f"HyperGCT_{dataset}_{time.strftime('%m%d%H%M')}"
 # snapshot configurations
 snapshot_arg = add_argument_group('Snapshot')
 snapshot_arg.add_argument('--snapshot_dir', type=str, default=f'snapshot/{experiment_id}')
