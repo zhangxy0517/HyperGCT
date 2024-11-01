@@ -140,22 +140,6 @@ class SpectralMatchingLoss(nn.Module):
         return loss
 
 
-class ContrastLoss(nn.Module):
-    def __init__(self):
-        super(ContrastLoss, self).__init__()
-        self.sigma_spatial = 0.1
-
-    def forward(self, corr_feats, gt_labels):
-        dists = torch.matmul(corr_feats.permute(0, 2, 1), corr_feats)
-        dists = torch.clamp((1 - dists) / self.sigma_spatial ** 2, min=0, max=1)
-        dists[:, torch.arange(dists.shape[1]), torch.arange(dists.shape[1])] = 0
-        inliers_mask = ((gt_labels[:, None, :] + gt_labels[:, :, None]) == 2)
-        pos_dist = dists[inliers_mask].mean()
-        neg_dist = dists[~inliers_mask].mean()
-        loss = pos_dist - neg_dist
-        return loss
-
-
 class EdgeFeatureLoss(nn.Module):  # TODO 0612 与graph update有关，attention softmax dim=-1时 transpose=True
     def __init__(self, transpose=False):
         super(EdgeFeatureLoss, self).__init__()
@@ -222,25 +206,6 @@ class EdgeLoss(nn.Module):  # TODO 0617
         gt_H = torch.matmul(gt_H, gt_H) * gt_H
         gt_H[gt_H > 0] = 1.0
         loss = self.masked(edge_score, raw_H, gt_H)
-        return loss
-
-
-class FeatureDifferenceLoss(nn.Module):
-    def __init__(self, balanced):
-        super(FeatureDifferenceLoss, self).__init__()
-        self.balanced = balanced
-
-    def forward(self, M, gt_label):
-        num = gt_label.shape[1]
-        pos_gt_M = ((gt_label[:, None, :] + gt_label[:, :, None]) == 2)
-        neg_gt_M = ~ pos_gt_M
-        # pos_gt_M[:, torch.arange(pos_gt_M.shape[1]), torch.arange(pos_gt_M.shape[2])] = 0.0
-        # neg_gt_M[:, torch.arange(neg_gt_M.shape[1]), torch.arange(neg_gt_M.shape[2])] = 0.0
-        # pos_num = pos_gt_M.sum(1).sum(-1) / 2.0 + gt_label.sum(-1) + 1.0
-        # neg_num = neg_gt_M.sum(1).sum(-1) / 2.0 + (num - gt_label.sum(-1)) + 1.0
-        # loss = torch.mean((pos_gt_M * M).sum(1).sum(-1) / pos_num - (neg_gt_M * M).sum(1).sum(-1) / neg_num)
-        loss = M[pos_gt_M].mean() - M[neg_gt_M].mean()
-
         return loss
 
 
