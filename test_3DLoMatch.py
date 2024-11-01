@@ -194,10 +194,8 @@ def eval_3DMatch_scene(model, scene_ind, dloader, config, args):
 def eval_3DMatch(model, config, args):
     dset = ThreeDLOMatchTest(root=config.root,
                             descriptor=args.descriptor,
-                            in_dim=config.in_dim,
                             inlier_threshold=config.inlier_threshold,
                             num_node=args.num_points,
-                            use_mutual=config.use_mutual,
                             augment_axis=0,
                             augment_rotation=0.00,
                             augment_translation=0.0,

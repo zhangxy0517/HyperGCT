@@ -7,7 +7,7 @@ import open3d as o3d
 import numpy as np
 import torch
 import torch.utils.data as data
-from utils.pointcloud import make_point_cloud, estimate_normal_gpu
+from utils.pointcloud import make_point_cloud, estimate_normal_gpu, estimate_normal
 from utils.SE3 import *
 
 
@@ -16,10 +16,8 @@ class ThreeDMatchTrainVal(data.Dataset):
                  root,
                  split,
                  descriptor='fcgf',
-                 in_dim=6,
                  inlier_threshold=0.10,
                  num_node=5000,
-                 use_mutual=True,
                  downsample=0.03,
                  augment_axis=1,
                  augment_rotation=1.0,
@@ -29,10 +27,8 @@ class ThreeDMatchTrainVal(data.Dataset):
         self.split = split
         self.descriptor = descriptor
         assert descriptor in ['fpfh', 'fcgf']
-        self.in_dim = in_dim
         self.inlier_threshold = inlier_threshold
         self.num_node = num_node
-        self.use_mutual = use_mutual
         self.downsample = downsample
         self.augment_axis = augment_axis
         self.augment_rotation = augment_rotation
@@ -101,8 +97,8 @@ class ThreeDMatchTrainVal(data.Dataset):
         # estimate normal
         src_pcd = make_point_cloud(src_keypts)
         tgt_pcd = make_point_cloud(tgt_keypts)
-        src_normal = estimate_normal_gpu(src_pcd, radius=0.2)
-        tgt_normal = estimate_normal_gpu(tgt_pcd, radius=0.2)
+        src_normal = estimate_normal(src_pcd, radius=0.2)
+        tgt_normal = estimate_normal(tgt_pcd, radius=0.2)
 
 
         # select {self.num_node} numbers of keypoints 提取关键点
@@ -188,10 +184,8 @@ class ThreeDMatchTest(data.Dataset):
     def __init__(self,
                  root,
                  descriptor='fcgf',
-                 in_dim=6,
                  inlier_threshold=0.10,
                  num_node=5000,
-                 use_mutual=True,
                  downsample=0.03,
                  augment_axis=0,
                  augment_rotation=1.0,
@@ -201,10 +195,8 @@ class ThreeDMatchTest(data.Dataset):
         self.root = root
         self.descriptor = descriptor
         assert descriptor in ['fcgf', 'fpfh']
-        self.in_dim = in_dim
         self.inlier_threshold = inlier_threshold
         self.num_node = num_node
-        self.use_mutual = use_mutual
         self.downsample = downsample
         self.augment_axis = augment_axis
         self.augment_rotation = augment_rotation
@@ -397,10 +389,8 @@ class ThreeDLOMatchTest(data.Dataset):
     def __init__(self,
                  root,
                  descriptor='fcgf',
-                 in_dim=6,
                  inlier_threshold=0.10,
                  num_node='all',
-                 use_mutual=True,
                  downsample=0.03,
                  augment_axis=0,
                  augment_rotation=1.0,
@@ -410,10 +400,8 @@ class ThreeDLOMatchTest(data.Dataset):
         self.root = root
         self.descriptor = descriptor
         assert descriptor in ['fcgf', 'fpfh', 'predator']
-        self.in_dim = in_dim
         self.inlier_threshold = inlier_threshold
         self.num_node = num_node
-        self.use_mutual = use_mutual
         self.downsample = downsample
         self.augment_axis = augment_axis
         self.augment_rotation = augment_rotation
@@ -566,7 +554,6 @@ if __name__ == "__main__":
                                split='train',
                                descriptor='fcgf',
                                num_node='all',
-                               use_mutual=False,
                                augment_axis=0,
                                augment_rotation=0,
                                augment_translation=0.00

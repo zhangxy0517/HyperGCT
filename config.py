@@ -25,15 +25,6 @@ snapshot_arg.add_argument('--tboard_dir', type=str, default=f'tensorboard/{exper
 snapshot_arg.add_argument('--snapshot_interval', type=int, default=1)
 snapshot_arg.add_argument('--save_dir', type=str, default=os.path.join(f'snapshot/{experiment_id}', 'models/'))
 
-# Network configurations
-net_arg = add_argument_group('Network')
-net_arg.add_argument('--in_dim', type=int, default=6)
-net_arg.add_argument('--num_layers', type=int, default=12)
-net_arg.add_argument('--num_channels', type=int, default=128)
-net_arg.add_argument('--num_iterations', type=int, default=10, help='power iteration algorithm')
-net_arg.add_argument('--seed_ratio', type=float, default=0.2, help='max ratio of seeding points')
-net_arg.add_argument('--k', type=int, default=40, help='size of local neighborhood')
-
 # Loss configurations
 loss_arg = add_argument_group('Loss')
 loss_arg.add_argument('--evaluate_interval', type=int, default=1)
@@ -61,7 +52,7 @@ opt_arg.add_argument('--scheduler_interval', type=int, default=1)
 data_arg = add_argument_group('Data')
 if dataset == '3DMatch':
     data_arg.add_argument('--root', type=str, default='/data/zxy/Threedmatch_dataset')
-    data_arg.add_argument('--descriptor', type=str, default='fcgf', choices=['d3feat', 'fpfh', 'fcgf'])
+    data_arg.add_argument('--descriptor', type=str, default='fcgf', choices=['fpfh', 'fcgf'])
     data_arg.add_argument('--inlier_threshold', type=float, default=0.10)
     data_arg.add_argument('--downsample', type=float, default=0.03)
     data_arg.add_argument('--re_thre', type=float, default=15, help='rotation error thrshold (deg)')
@@ -74,8 +65,8 @@ else:
     data_arg.add_argument('--re_thre', type=float, default=5, help='rotation error thrshold (deg)')
     data_arg.add_argument('--te_thre', type=float, default=60, help='translation error thrshold (cm)')
 
+data_arg.add_argument('--seed_ratio', type=float, default=0.2, help='max ratio of seeding points')
 data_arg.add_argument('--num_node', type=int, default=1000)
-data_arg.add_argument('--use_mutual', type=str2bool, default=False)
 data_arg.add_argument('--augment_axis', type=int, default=3)
 data_arg.add_argument('--augment_rotation', type=float, default=1.0, help='rotation angle = num * 2pi')
 data_arg.add_argument('--augment_translation', type=float, default=0.5, help='translation = num (m)')

@@ -177,7 +177,6 @@ def eval_KITTI(model, config, args):
                         descriptor=config.descriptor,
                         inlier_threshold=config.inlier_threshold,
                         num_node=8000,
-                        use_mutual=config.use_mutual,
                         augment_axis=0,
                         augment_rotation=0.00,
                         augment_translation=0.0,
