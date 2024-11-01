@@ -29,7 +29,6 @@
     "root": "/data/zxy/Threedmatch_dataset",
     "descriptor": "fcgf",
     "inlier_threshold": 0.1,
-    "sigma_d": 0.1,
     "downsample": 0.03,
     "re_thre": 15,
     "te_thre": 30,

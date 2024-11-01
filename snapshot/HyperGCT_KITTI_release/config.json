@@ -29,7 +29,6 @@
     "root": "/data/zxy/KITTI",
     "descriptor": "fcgf",
     "inlier_threshold": 1.2,
-    "sigma_d": 1.2,
     "downsample": 0.3,
     "re_thre": 5,
     "te_thre": 60,
