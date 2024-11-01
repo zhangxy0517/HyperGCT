@@ -8,10 +8,8 @@ class KITTIDataset(data.Dataset):
                 root,
                 split='train',
                 descriptor='fcgf',
-                in_dim=6,
                 inlier_threshold=0.60,
                 num_node=5000,
-                use_mutual=True,
                 downsample=0.30,
                 augment_axis=0,
                 augment_rotation=1.0,
@@ -21,10 +19,8 @@ class KITTIDataset(data.Dataset):
         self.split = split
         self.descriptor = descriptor
         #assert descriptor in ['fcgf', 'fpfh']
-        self.in_dim = in_dim
         self.inlier_threshold = inlier_threshold
         self.num_node = num_node
-        self.use_mutual = use_mutual
         self.downsample = downsample
         self.augment_axis = augment_axis
         self.augment_rotation = augment_rotation
@@ -180,7 +176,6 @@ class KITTIDatasetTest(data.Dataset):
                  descriptor='fcgf',
                  inlier_threshold=0.60,
                  num_node=5000,
-                 use_mutual=True,
                  downsample=0.30,
                  augment_axis=0,
                  augment_rotation=1.0,
@@ -193,7 +188,6 @@ class KITTIDatasetTest(data.Dataset):
         # assert descriptor in ['fcgf', 'fpfh']
         self.inlier_threshold = inlier_threshold
         self.num_node = num_node
-        self.use_mutual = use_mutual
         self.downsample = downsample
         self.augment_axis = augment_axis
         self.augment_rotation = augment_rotation
@@ -328,7 +322,6 @@ if __name__ == "__main__":
                     split='train',
                     descriptor='feat',
                     num_node=5000,
-                    use_mutual=False,
                     augment_axis=0,
                     augment_rotation=0,
                     augment_translation=0.00
