@@ -132,7 +132,7 @@ class ThreeDMatchTrainVal(data.Dataset):
         source_idx = relax_src_idx[:, 0].numpy()
         # source_idx = np.argmin(distance, axis=1)  # for each row save the index of minimun
         corr0 = np.concatenate([np.arange(source_idx.shape[0])[:, None], source_idx[:, None]], axis=-1)
-        score0 = (relax_src_dis[:, 0] / relax_src_dis[:, 1]).numpy()
+        #score0 = (relax_src_dis[:, 0] / relax_src_dis[:, 1]).numpy()
 
         relax_tgt_dis, relax_tgt_idx = torch.topk(torch.from_numpy(distance), k=2, dim=0, largest=False)
         relax_tgt_dis = relax_tgt_dis.T
@@ -140,11 +140,11 @@ class ThreeDMatchTrainVal(data.Dataset):
         target_idx = relax_tgt_idx[:, 0].numpy()
         # target_idx = np.argmin(distance, axis=0)
         corr1 = np.concatenate([target_idx[:, None], np.arange(target_idx.shape[0])[:, None]], axis=-1)
-        score1 = (relax_tgt_dis[:, 0] / relax_tgt_dis[:, 1]).numpy()
+        #score1 = (relax_tgt_dis[:, 0] / relax_tgt_dis[:, 1]).numpy()
 
         mask = source_idx[target_idx] != np.arange(target_idx.shape[0])  # 找出corr1不重复的匹配
         corr = np.concatenate([corr0, corr1[mask]], axis=0)
-        score = np.concatenate([score0, score1[mask]], axis=0)
+        #score = np.concatenate([score0, score1[mask]], axis=0)
 
         if len(corr) < 10:
             # skip pairs with too few correspondences.
