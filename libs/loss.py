@@ -82,6 +82,7 @@ class ClassificationLoss(nn.Module):
             - logits_true:  average logits for inliers
             - logits_false: average logits for outliers
         """
+        bs, num_corr = pred.shape
         num_pos = torch.relu(torch.sum(gt) - 1) + 1
         num_neg = torch.relu(torch.sum(1 - gt) - 1) + 1
         if weight is not None:
@@ -93,21 +94,30 @@ class ClassificationLoss(nn.Module):
             loss = nn.BCEWithLogitsLoss(pos_weight=num_neg * 1.0 / num_pos, reduction='mean')(pred, gt.float())
 
         # compute precision, recall, f1
+        precision, recall, f1 = 0.0, 0.0, 0.0
+        logit_true, logit_false = 0.0, 0.0
         pred_labels = pred > 0
-        gt, pred_labels, pred = gt.detach().cpu().numpy(), pred_labels.detach().cpu().numpy(), pred.detach().cpu().numpy()
-        precision = precision_score(gt[0], pred_labels[0])
-        recall = recall_score(gt[0], pred_labels[0])
-        f1 = f1_score(gt[0], pred_labels[0])
-        mean_logit_true = np.sum(pred * gt) / max(1, np.sum(gt))
-        mean_logit_false = np.sum(pred * (1 - gt)) / max(1, np.sum(1 - gt))
+        for i in range(bs):
+            gt_np, pred_labels_np, pred_np = gt[i].detach().cpu().numpy(), pred_labels[i].detach().cpu().numpy(), pred[i].detach().cpu().numpy()
+            precision += precision_score(gt_np, pred_labels_np)
+            recall += recall_score(gt_np, pred_labels_np)
+            f1 += f1_score(gt_np, pred_labels_np)
+            logit_true += np.sum(pred_np * gt_np) / max(1, np.sum(gt_np))
+            logit_false += np.sum(pred_np * (1 - gt_np)) / max(1, np.sum(1 - gt_np))
+
+        precision /= bs
+        recall /= bs
+        f1 /= bs
+        logit_true /= bs
+        logit_false /= bs
 
         eval_stats = {
             "loss": loss,
             "precision": float(precision),
             "recall": float(recall),
             "f1": float(f1),
-            "logit_true": float(mean_logit_true),
-            "logit_false": float(mean_logit_false)
+            "logit_true": float(logit_true),
+            "logit_false": float(logit_false)
         }
         return eval_stats
 
