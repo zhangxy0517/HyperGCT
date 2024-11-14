@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-
+from torch.utils.data import DataLoader
 
 def collate_fn(list_data):
     min_num = 1e10
@@ -106,7 +106,7 @@ def collate_fn2(list_data):
 
 
 def get_dataloader(dataset, batch_size, shuffle=True, num_workers=4, fix_seed=True):
-    return torch.utils.data.DataLoader(
+    return DataLoader(
         dataset, 
         batch_size=batch_size, 
         shuffle=shuffle, 
@@ -116,7 +116,7 @@ def get_dataloader(dataset, batch_size, shuffle=True, num_workers=4, fix_seed=Tr
     )
 
 def get_dataloader_lc(dataset, batch_size, shuffle=True, num_workers=4, fix_seed=True):
-    return torch.utils.data.DataLoader(
+    return DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=shuffle,
@@ -125,11 +125,15 @@ def get_dataloader_lc(dataset, batch_size, shuffle=True, num_workers=4, fix_seed
         multiprocessing_context=torch.multiprocessing.get_context("spawn")
     )
     
-def get_dataloader_train(dataset, batch_size, shuffle=True, num_workers=4, fix_seed=True):
-    return torch.utils.data.DataLoader(
+def get_dataloader_train(dataset, batch_size, sampler=None, shuffle=True, num_workers=4, fix_seed=True):
+    if sampler is not None:
+        # Disable shuffling if a sampler is provided, as the sampler manages data shuffling
+        shuffle = False
+    return DataLoader(
         dataset, 
         batch_size=batch_size, 
-        shuffle=shuffle, 
+        shuffle=shuffle,
+        sampler=sampler,
         collate_fn=collate_fn2,
         num_workers=num_workers,
         multiprocessing_context=torch.multiprocessing.get_context("spawn")
