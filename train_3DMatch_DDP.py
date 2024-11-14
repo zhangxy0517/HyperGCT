@@ -6,7 +6,7 @@ from easydict import EasyDict as edict
 from libs.loss import *
 from datasets.ThreeDMatch import ThreeDMatchTrainVal
 from datasets.dataloader import get_dataloader_train
-from libs.trainer import Trainer
+from libs.trainer import Trainer_DDP
 from torch import optim
 import torch
 import torch.nn as nn
@@ -106,7 +106,7 @@ def main_worker(rank, world_size, config, resume, start_epoch, best_reg_recall, 
         k = k + l
     print(k)
 
-    trainer = Trainer(config)
+    trainer = Trainer_DDP(config)
     trainer.train(resume, start_epoch, best_reg_recall, best_F1)
 
     # Clean up distributed process group
