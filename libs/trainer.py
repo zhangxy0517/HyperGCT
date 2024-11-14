@@ -1,13 +1,340 @@
 import torch
+import torch.distributed as dist
 import time, os
 import numpy as np
 from tensorboardX import SummaryWriter
 from utils.timer import Timer, AverageMeter
 from tqdm import tqdm
 
+class Trainer_DDP(object):
+    def __init__(self, args):
+        # parallel
+        # 初始化其他参数
+        self.rank = dist.get_rank() if dist.is_initialized() else 0
+        self.world_size = args.world_size
+        self.dist_backend = 'nccl'
+        self.dist_url = "env://"
 
-# import matplotlib.pyplot as plt
+        # 设置 GPU
+        self.device = torch.device(f'cuda:{self.rank}')
+        # torch.cuda.set_device(self.device)
 
+        # parameters
+        self.t = None
+        self.max_epoch = args.max_epoch
+        self.training_max_iter = args.training_max_iter
+        self.val_max_iter = args.val_max_iter
+        self.batch_size = args.batch_size
+        self.snapshot_dir = args.snapshot_dir
+        self.save_dir = args.save_dir
+        self.gpu_mode = args.gpu_mode
+        self.verbose = args.verbose
+
+        self.model = args.model
+        self.optimizer = args.optimizer
+        self.scheduler = args.scheduler
+        self.scheduler_interval = args.scheduler_interval
+        self.snapshot_interval = args.snapshot_interval
+        self.evaluate_interval = args.evaluate_interval
+        self.evaluate_metric = args.evaluate_metric
+        self.metric_weight = args.metric_weight
+        self.transformation_loss_start_epoch = args.transformation_loss_start_epoch
+        self.writer = SummaryWriter(log_dir=args.tboard_dir) if self.rank == 0 else None
+        self.train_loader = args.train_loader
+        self.val_loader = args.val_loader
+
+        if self.gpu_mode:
+            self.model = self.model.cuda()
+
+        if args.pretrain != '':
+            self._load_pretrain(args.pretrain)
+
+    def train(self, resume, start_epoch, best_reg_recall, best_F1):
+        # resume to train from given epoch
+        if resume:
+            print(f'Rank {self.rank}: Resuming from epoch {start_epoch}')
+            # assert start_epoch != 0
+            model_path = str(self.save_dir + '/model_{}.pkl'.format(start_epoch))
+            #model_path = str(self.snapshot_dir + '/models/model_best.pkl'.format(start_epoch))
+            print(f'Rank {self.rank}: Loading model parameters from {model_path}')
+            # 确保在多GPU情况下正确加载模型参数
+            state_dict = torch.load(model_path, map_location=self.device)
+            if hasattr(self.model, 'module'):
+                self.model.module.load_state_dict(state_dict)
+            else:
+                self.model.load_state_dict(state_dict)
+        else:
+            start_epoch = 0
+            best_reg_recall = 0
+            best_F1 = 0
+            print(f'Rank {self.rank} Warning: Retrain the model may not produce the same results!')
+
+        self.model.train()
+        # evaluate using initial parameters
+        res = self.evaluate(start_epoch)
+        if res is not None:
+            print(f'Evaluation: Epoch {start_epoch}: SM Loss {res["sm_loss"]:.2f} Class Loss {res["class_loss"]:.2f} Graph Loss {res["graph_loss"]:.2f} F1 {res["f1"]:.2f} Recall {res["reg_recall"]:.2f}')
+        print(f'Rank {self.rank}: training start!!')
+        self.t = tqdm(range(start_epoch, self.max_epoch), desc="Total Progress", ncols=2 * self.max_epoch)
+        for epoch in self.t:
+            self.train_epoch(epoch + 1)  # start from epoch 1
+            if (epoch + 1) % self.evaluate_interval == 0 or epoch == 0:
+                res = self.evaluate(epoch + 1)
+                if self.rank == 0:
+                    self.t.write(
+                        f'Evaluation: Epoch {epoch + 1}: SM Loss {res["sm_loss"]:.2f} Class Loss {res["class_loss"]:.2f} Graph Loss {res["graph_loss"]:.2f} F1 {res["f1"]:.2f} Recall {res["reg_recall"]:.2f}')
+                    if round(res['reg_recall'], 2) > best_reg_recall:  # reg_recall 相同时
+                        if epoch < 10:
+                            self.t.write('best model in 10 epoch will not be saved!')
+                        else:
+                            best_reg_recall = round(res['reg_recall'], 2)
+                            best_F1 = res['f1']
+                            self._snapshot('best')
+                    elif round(res['reg_recall'], 2) == best_reg_recall and res['f1'] > best_F1:
+                        self.t.write(
+                            f'previous best: RR {best_reg_recall:.2f} F1 {best_F1:.2f}, current: RR {res["reg_recall"]:.2f} F1 {res["f1"]:.2f}')
+                        if epoch < 10:
+                            self.t.write('best model in 10 epoch will not be saved!')
+                        else:
+                            best_F1 = res['f1']
+                            self._snapshot('best')
+
+            if (epoch + 1) % self.scheduler_interval == 0:
+                self.scheduler.step()
+
+            if (epoch + 1) % self.snapshot_interval == 0:
+                self._snapshot(epoch + 1)
+
+        # finish all epoch
+        if self.rank == 0:
+            self.writer.close()
+            self.t.write("Training finish!... save training results")
+
+    def train_epoch(self, epoch):
+        self.model.train()
+        # create meters and timers
+        meter_list = ['class_loss', 'sm_loss', 'reg_recall', 'graph_loss', 're', 'te', 'precision', 'recall', 'f1']
+        meter_dict = {}
+        for key in meter_list:
+            meter_dict[key] = AverageMeter()
+        data_timer, model_timer = Timer(), Timer()
+        # 所有GPU分摊一个Epoch的数据
+        num_iter = int(len(self.train_loader.dataset) / (self.batch_size * self.world_size)) # 一个GPU上的轮次
+        num_iter = min(self.training_max_iter, num_iter)
+        self.train_loader.sampler.set_epoch(epoch)
+        for iter, batch in enumerate(self.train_loader):
+            data_timer.tic()
+            (corr_pos, src_keypts, tgt_keypts, src_normal, tgt_normal, gt_trans, gt_labels) = batch
+        # trainer_loader_iter = self.train_loader.__iter__()
+        # for iter in range(num_iter):
+        #     data_timer.tic()
+        #     (corr_pos, src_keypts, tgt_keypts, src_normal, tgt_normal, gt_trans, gt_labels) = next(trainer_loader_iter)
+            if self.gpu_mode:
+                corr_pos, src_keypts, tgt_keypts, src_normal, tgt_normal, gt_trans, gt_labels = \
+                    corr_pos.cuda(), src_keypts.cuda(), tgt_keypts.cuda(), src_normal.cuda(), tgt_normal.cuda(), gt_trans.cuda(), gt_labels.cuda()
+
+            # TODO 收敛更快
+            if epoch <= 5:
+                mask = gt_labels.mean(-1) > 0.2
+                if mask.sum() > 0:
+                    corr_pos = corr_pos[mask]
+                    src_keypts = src_keypts[mask]
+                    tgt_keypts = tgt_keypts[mask]
+                    src_normal = src_normal[mask]
+                    tgt_normal = tgt_normal[mask]
+                    gt_trans = gt_trans[mask]
+                    gt_labels = gt_labels[mask]
+
+            elif epoch <= 10:
+                mask = gt_labels.mean(-1) > 0.1
+                if mask.sum() > 0:
+                    corr_pos = corr_pos[mask]
+                    src_keypts = src_keypts[mask]
+                    tgt_keypts = tgt_keypts[mask]
+                    src_normal = src_normal[mask]
+                    tgt_normal = tgt_normal[mask]
+                    gt_trans = gt_trans[mask]
+                    gt_labels = gt_labels[mask]
+
+            data = {
+                'corr_pos': corr_pos,
+                'src_keypts': src_keypts,
+                'tgt_keypts': tgt_keypts,
+                'src_normal': src_normal,
+                'tgt_normal': tgt_normal,
+            }
+            data_timer.toc()
+
+            model_timer.tic()
+            # forward
+            self.optimizer.zero_grad()
+            res = self.model(data)
+            pred_trans, pred_labels = res['final_trans'], res['final_labels']
+            # classification loss
+            class_stats = self.evaluate_metric['ClassificationLoss'](pred_labels, gt_labels)
+            class_loss = class_stats['loss']
+            # spectral matching loss
+            sm_loss = self.evaluate_metric['SpectralMatchingLoss'](res['M'], gt_labels)
+
+            # hypergraph loss
+            graph_loss = self.evaluate_metric['HypergraphLoss'](res['edge_score'], res['raw_H'], gt_labels)
+
+            # transformation loss
+            reg_recall, re, te, rmse = self.evaluate_metric['TransformationLoss'](pred_trans, gt_trans, src_keypts,
+                                                                                  tgt_keypts, pred_labels)
+
+            loss = (self.metric_weight['ClassificationLoss'] * class_loss + self.metric_weight[
+                'SpectralMatchingLoss'] * sm_loss
+                    + self.metric_weight['HypergraphLoss'] * graph_loss)
+
+            stats = {
+                'class_loss': float(class_loss),
+                'sm_loss': float(sm_loss),
+                'graph_loss': float(graph_loss),
+                'reg_recall': float(reg_recall),
+                're': float(re),
+                'te': float(te),
+                'precision': class_stats['precision'],
+                'recall': class_stats['recall'],
+                'f1': class_stats['f1'],
+            }
+
+            # backward
+            loss.backward()
+            do_step = True
+            for param in self.model.parameters():
+                if param.grad is not None:
+                    if (1 - torch.isfinite(param.grad).long()).sum() > 0:
+                        do_step = False
+                        break
+            if do_step is True:
+                self.optimizer.step()
+            model_timer.toc()
+
+            if not np.isnan(float(loss)):
+                for key in meter_list:
+                    if not np.isnan(stats[key]):
+                        meter_dict[key].update(stats[key])
+
+            else:  # debug the loss calculation process.
+                import pdb
+                pdb.set_trace()
+
+            torch.cuda.empty_cache()
+
+            if (iter + 1) % 100 == 0:
+                self.t.write(f"Epoch: {epoch} [{iter + 1:4d}/{num_iter}] "
+                             f"Rank: {self.rank} "
+                             f"sm_loss: {meter_dict['sm_loss'].avg:.2f} "
+                             f"class_loss: {meter_dict['class_loss'].avg:.2f} "
+                             f"graph_loss: {meter_dict['graph_loss'].avg:.2f} "
+                             f"reg_recall: {meter_dict['reg_recall'].avg:.2f}% "
+                             f"re: {meter_dict['re'].avg:.2f}degree "
+                             f"te: {meter_dict['te'].avg:.2f}cm "
+                             f"data_time: {data_timer.avg:.2f}s "
+                             f"model_time: {model_timer.avg:.2f}s "
+                             )
+                # 聚合各 GPU 的指标，求平均
+                for key in meter_list:
+                    tensor = torch.tensor(meter_dict[key].avg, device=self.device)
+                    dist.reduce(tensor, dst=0, op=dist.ReduceOp.SUM)
+                    if self.rank == 0:
+                        meter_dict[key].avg = tensor.item() / self.world_size
+                        curr_iter = self.world_size * num_iter * (epoch - 1) + iter
+                        self.writer.add_scalar(f"Train/{key}", meter_dict[key].avg, curr_iter)
+
+        return
+
+    def evaluate(self, epoch):
+        self.model.eval()
+
+        # create meters and timers
+        meter_list = ['class_loss', 'sm_loss', 'reg_recall', 'graph_loss', 're', 'te', 'precision', 'recall', 'f1']
+        meter_dict = {}
+        for key in meter_list:
+            meter_dict[key] = AverageMeter()
+        data_timer, model_timer = Timer(), Timer()
+
+        # 每个GPU独立评估，然后把所有的结果汇总
+        num_iter = int(len(self.val_loader.dataset) / self.batch_size)
+        num_iter = min(self.val_max_iter, num_iter)
+        val_loader_iter = self.val_loader.__iter__()
+        with torch.no_grad():
+            for iter in range(num_iter):
+                data_timer.tic()
+                (corr_pos, src_keypts, tgt_keypts, src_normal, tgt_normal, gt_trans, gt_labels) = next(val_loader_iter)
+                if self.gpu_mode:
+                    corr_pos, src_keypts, tgt_keypts, src_normal, tgt_normal, gt_trans, gt_labels = \
+                        corr_pos.cuda(), src_keypts.cuda(), tgt_keypts.cuda(), src_normal.cuda(), tgt_normal.cuda(), gt_trans.cuda(), gt_labels.cuda()
+                data = {
+                    'corr_pos': corr_pos,
+                    'src_keypts': src_keypts,
+                    'tgt_keypts': tgt_keypts,
+                    'src_normal': src_normal,
+                    'tgt_normal': tgt_normal,
+                }
+                data_timer.toc()
+
+                model_timer.tic()
+                # forward
+                res = self.model(data)
+                pred_trans, pred_labels = res['final_trans'], res['final_labels']
+                # classification loss
+                class_stats = self.evaluate_metric['ClassificationLoss'](pred_labels, gt_labels)
+                class_loss = class_stats['loss']
+                # spectral matching loss
+                sm_loss = self.evaluate_metric['SpectralMatchingLoss'](res['M'], gt_labels)
+
+                # hypergraph loss
+                graph_loss = self.evaluate_metric['HypergraphLoss'](res['edge_score'], res['raw_H'], gt_labels)
+                # transformation loss
+                reg_recall, re, te, rmse = self.evaluate_metric['TransformationLoss'](pred_trans, gt_trans, src_keypts,
+                                                                                      tgt_keypts, pred_labels)
+                model_timer.toc()
+
+                stats = {
+                    'class_loss': float(class_loss),
+                    'sm_loss': float(sm_loss),
+                    'graph_loss': float(graph_loss),
+                    'reg_recall': float(reg_recall),
+                    're': float(re),
+                    'te': float(re),
+                    'precision': class_stats['precision'],
+                    'recall': class_stats['recall'],
+                    'f1': class_stats['f1'],
+                }
+                for key in meter_list:
+                    if not np.isnan(stats[key]):
+                        meter_dict[key].update(stats[key])
+                torch.cuda.empty_cache()
+
+        res = {}
+        # 将所有进程的评估结果聚合到 rank 0
+        if dist.is_initialized():
+            for key in meter_list:
+                tensor = torch.tensor(meter_dict[key].avg, device=self.device)
+                dist.reduce(tensor, dst=0, op=dist.ReduceOp.SUM)
+                if self.rank == 0:
+                    res[key] = tensor.item() / self.world_size  # 求平均值
+                    self.writer.add_scalar(f"Val/{key}", res[key], epoch)
+
+        # 所有进程同步，等待 rank 0 上的 evaluate 完成
+        if dist.is_initialized():
+            dist.barrier()
+        return res if self.rank == 0 else None
+
+    def _snapshot(self, epoch):
+        model_to_save = self.model.module if hasattr(self.model, 'module') else self.model
+        if self.rank == 0:
+            torch.save(model_to_save.state_dict(), os.path.join(self.save_dir, f"model_{epoch}.pkl"))
+            self.t.write(f"Save model to {self.save_dir}/model_{epoch}.pkl")
+
+    def _load_pretrain(self, pretrain):
+        state_dict = torch.load(pretrain, map_location='cpu')
+        model_to_load = self.model.module if hasattr(self.model, 'module') else self.model
+        model_to_load.load_state_dict(state_dict)
+        if self.rank == 0:
+            self.t.write(f"Load model from {pretrain}.pkl")
 
 class Trainer(object):
     def __init__(self, args):
