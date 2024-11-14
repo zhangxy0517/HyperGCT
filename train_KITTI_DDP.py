@@ -117,6 +117,8 @@ if __name__ == '__main__':
     config = edict(dconfig)
     # change the dataset path here
     # config.root = ''
+    # you may use a bigger batch size
+    config.batch_size = 12
 
     resume = False
     if resume:
