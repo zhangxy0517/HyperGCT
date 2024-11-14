@@ -119,7 +119,9 @@ if __name__ == '__main__':
         print(f"    {k}: {dconfig[k]}")
     config = edict(dconfig)
     # change the dataset path here
-    #config.root = '/media/SSD/PCR_methods/Threedmatch_dataset'
+    # config.root = '/media/SSD/PCR_methods/Threedmatch_dataset'
+    # you may use a bigger batch size
+    config.batch_size = 12
 
     resume = False
     if resume:
