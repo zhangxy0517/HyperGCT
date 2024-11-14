@@ -35,7 +35,7 @@ def rigid_transform_3d(A, B, weights=None, weight_threshold=0):
     # find rotation
     U, S, Vt = torch.svd(H.cpu())
     U, S, Vt = U.to(weights.device), S.to(weights.device), Vt.to(weights.device)
-    delta_UV = torch.det(Vt @ U.permute(0, 2, 1))
+    delta_UV = torch.linalg.det(Vt @ U.permute(0, 2, 1))
     eye = torch.eye(3)[None, :, :].repeat(bs, 1, 1).to(A.device)
     eye[:, -1, -1] = delta_UV
     R = Vt @ eye @ U.permute(0, 2, 1)
