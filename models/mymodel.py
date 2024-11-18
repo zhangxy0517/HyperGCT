@@ -332,7 +332,7 @@ class HGNN(nn.Module):
 
 class MethodName(nn.Module):
     def __init__(self, config):
-        super().__init__()
+        super(MethodName, self).__init__()
         self.config = config
         self.inlier_threshold = config.inlier_threshold
         self.num_iterations = 10
