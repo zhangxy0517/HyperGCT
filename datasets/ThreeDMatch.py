@@ -97,8 +97,8 @@ class ThreeDMatchTrainVal(data.Dataset):
         # estimate normal
         src_pcd = make_point_cloud(src_keypts)
         tgt_pcd = make_point_cloud(tgt_keypts)
-        src_normal = estimate_normal(src_pcd, radius=0.2)
-        tgt_normal = estimate_normal(tgt_pcd, radius=0.2)
+        src_normal = estimate_normal_gpu(src_pcd, radius=0.2)# 训练时显存开销较大，爆显存使用CPU
+        tgt_normal = estimate_normal_gpu(tgt_pcd, radius=0.2)# 提前将normal计算并保存更合适
 
 
         # select {self.num_node} numbers of keypoints 提取关键点
