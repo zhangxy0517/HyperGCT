@@ -22,9 +22,9 @@ def estimate_normal(pcd, radius=0.06, max_nn=30):
     pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=radius, max_nn=max_nn))
     return np.array(pcd.normals)
 
-def estimate_normal_gpu(pcd, radius=0.06, max_nn=30):
+def estimate_normal_gpu(pcd, radius=0.06, max_nn=30, rank=0):
     # gpu version
-    device = o3d.core.Device('cuda:0')
+    device = o3d.core.Device(f'cuda:{rank}')
     cloud = o3d.t.geometry.PointCloud(device)
     cloud.point["positions"] = o3d.core.Tensor(np.asarray(pcd.points), o3d.core.Dtype.Float32, device)
     o3d.t.geometry.PointCloud.estimate_normals(cloud, radius=radius, max_nn=max_nn)
