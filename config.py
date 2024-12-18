@@ -20,6 +20,7 @@ dataset = '3DMatch'
 experiment_id = f"HyperGCT_{dataset}_{time.strftime('%m%d%H%M')}"
 # snapshot configurations
 snapshot_arg = add_argument_group('Snapshot')
+snapshot_arg.add_argument('--exp_id', type=str, default=f'{experiment_id}')
 snapshot_arg.add_argument('--snapshot_dir', type=str, default=f'snapshot/{experiment_id}')
 snapshot_arg.add_argument('--tboard_dir', type=str, default=f'tensorboard/{experiment_id}')
 snapshot_arg.add_argument('--snapshot_interval', type=int, default=1)
