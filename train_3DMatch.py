@@ -130,3 +130,17 @@ if __name__ == '__main__':
 
     trainer = Trainer(config)
     trainer.train(resume, start_epoch, best_reg_recall, best_F1)
+    print('Start testing:')
+    import subprocess
+    subprocess.run(
+        ["python", "test_3DMatch.py", f"--chosen_snapshot={config.exp_id}", "--descriptor=fcgf"],
+    )
+    subprocess.run(
+        ["python", "test_3DMatch.py", f"--chosen_snapshot={config.exp_id}", "--descriptor=fpfh"],
+    )
+    subprocess.run(
+        ["python", "test_3DLoMatch.py", f"--chosen_snapshot={config.exp_id}", "--descriptor=fcgf"],
+    )
+    subprocess.run(
+        ["python", "test_3DLoMatch.py", f"--chosen_snapshot={config.exp_id}", "--descriptor=fpfh"],
+    )
