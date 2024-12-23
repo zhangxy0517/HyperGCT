@@ -44,6 +44,7 @@ if __name__ == '__main__':
     shutil.copy2(os.path.join('.', 'models/mymodel.py'), os.path.join(config.snapshot_dir, 'mymodel.py'))  # for the model setting.
     shutil.copy2(os.path.join('.', 'libs/loss.py'), os.path.join(config.snapshot_dir, 'loss.py'))
     shutil.copy2(os.path.join('.', 'datasets/ThreeDMatch.py'), os.path.join(config.snapshot_dir, 'dataset.py'))
+    shutil.copy2(os.path.join('.', 'datasets/dataloader.py'), os.path.join(config.snapshot_dir, 'loader.py'))
     json.dump(
         config,
         open(os.path.join(config.snapshot_dir, 'config.json'), 'w'),
