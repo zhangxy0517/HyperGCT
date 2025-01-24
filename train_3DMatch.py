@@ -131,6 +131,12 @@ if __name__ == '__main__':
 
     trainer = Trainer(config)
     trainer.train(resume, start_epoch, best_reg_recall, best_F1)
+
+    # 清理显存
+    torch.cuda.empty_cache()  # 清理缓存中未被使用的显存
+
+    # 释放与训练相关的变量
+    del trainer
     print('Start testing:')
     import subprocess
     subprocess.run(
