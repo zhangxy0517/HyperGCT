@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--chosen_snapshot', default='HyperGCT_3DMatch_release', type=str, help='snapshot dir')
-    parser.add_argument('--descriptor', default='fpfh', type=str, choices=['fcgf', 'predator'])
+    parser.add_argument('--descriptor', default='fpfh', type=str)
     parser.add_argument('--num_points', default='all', type=str)
     parser.add_argument('--use_icp', default=False, type=str2bool)
     args = parser.parse_args()
