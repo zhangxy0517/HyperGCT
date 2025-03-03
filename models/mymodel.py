@@ -23,7 +23,7 @@ def feature_knn(x, k):
     return idx
 
 
-def mask_score(score, H0, iter, choice='topk'):
+def mask_score(score, H0, iter, num_layer, choice='topk'):
     bs, num, _ = H0.size()
     # score: row->V, col->E
     if choice == 'auto':
@@ -31,7 +31,7 @@ def mask_score(score, H0, iter, choice='topk'):
         H = torch.where(torch.greater(W, 0), H0, torch.zeros_like(H0))
 
     elif choice == 'topk':
-        k = round(num * 0.1 * (5 - iter))
+        k = round(num * 0.1 * (num_layer - 1 - iter))
         topk, _ = torch.topk(score, k=k, dim=-1)  # 每个节点选出topk概率的超边，该超边包含该节点
         a_min = torch.min(topk, dim=-1).values.unsqueeze(-1).repeat(1, 1, num)
         W = torch.where(torch.greater_equal(score, a_min), score, torch.zeros_like(score))
@@ -44,13 +44,14 @@ def mask_score(score, H0, iter, choice='topk'):
 
 
 class GraphUpdate(nn.Module):
-    def __init__(self, num_channels, num_heads):
+    def __init__(self, num_channels, num_heads, num_layer):
         super(GraphUpdate, self).__init__()
         self.projection_q = nn.Conv1d(num_channels, num_channels, kernel_size=1)
         self.projection_k = nn.Conv1d(num_channels, num_channels, kernel_size=1)
         self.projection_v = nn.Conv1d(num_channels, num_channels, kernel_size=1)
         self.num_channels = num_channels
         self.head = num_heads
+        self.num_layer = num_layer
         self.make_score_choice = 'topk'
 
     def forward(self, H0, vertex_feat, edge_feat, iter):
@@ -76,7 +77,7 @@ class GraphUpdate(nn.Module):
         #     edge_message = torch.einsum('bhoi, bhci-> bhco', score, V).reshape([bs, -1, num_vertices])  # [bs, dim, num_corr]
 
         score = (torch.sum(score, dim=1) / self.head).view(bs, num_vertices, num_vertices)  # 合并多个head的score
-        H, W = mask_score(score, H0, iter, choice=self.make_score_choice)
+        H, W = mask_score(score, H0, iter, self.num_layer, choice=self.make_score_choice)
 
         # update D_n_1, W_edge according to new H
         degree_E = H.sum(dim=1)
@@ -286,7 +287,7 @@ class HGNN(nn.Module):
             self.blocks[f'GNN_layer_{i}'] = HGNN_layer(in_channels=dim[i], out_channels=dim[i + 1])
             self.blocks[f'NonLocal_{i}'] = NonLocalBlock(dim[i + 1])
             if i < num_layers - 1:
-                self.blocks[f'update_graph_{i}'] = GraphUpdate(num_channels=128, num_heads=1)
+                self.blocks[f'update_graph_{i}'] = GraphUpdate(num_channels=128, num_heads=1, num_layer=self.num_layers)
 
     def forward(self, x, W):
         global edge_score
