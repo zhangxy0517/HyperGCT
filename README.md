@@ -16,9 +16,9 @@ conda activate HyperGCT
 We provide the pre-trained model of 3DMatch in `snapshot/HyperGCT_3DMatch_release` and KITTI in `snapshot/HyperGCT_KITTI_release`.
 
 ## Data Preparation
-
+The processed train and test sets can be found [Here](https://pan.baidu.com/s/1syXjIaYg6DYb649i9RBmNA?pwd=6666).
 ### 3DMatch / 3DLoMatch
-We follow [PointDSC](https://github.com/XuyangBai/PointDSC) to generate datasets. The processed train and test sets can be found [Here](). The data should be organized as follows:
+We follow [PointDSC](https://github.com/XuyangBai/PointDSC) to generate datasets. The data should be organized as follows:
 
 ```
 --data--3DMatch                
@@ -37,7 +37,7 @@ We follow [PointDSC](https://github.com/XuyangBai/PointDSC) to generate datasets
             └── ...                               
 ```
 ### KITTI-10m / KITTI-LC
-We follow [LiDAR Registration Benchmark](https://github.com/HKUST-Aerial-Robotics/LiDAR-Registration-Benchmark) to generate datasets. The processed train and test sets can be found [Here](). The data should be organized as follows:
+We follow [LiDAR Registration Benchmark](https://github.com/HKUST-Aerial-Robotics/LiDAR-Registration-Benchmark) to generate datasets. The data should be organized as follows:
 
 ```
 --data--KITTI                
