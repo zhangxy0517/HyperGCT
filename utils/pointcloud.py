@@ -28,5 +28,8 @@ def estimate_normal_gpu(pcd, radius=0.06, max_nn=30, rank=0):
     cloud = o3d.t.geometry.PointCloud(device)
     cloud.point["positions"] = o3d.core.Tensor(np.asarray(pcd.points), o3d.core.Dtype.Float32, device)
     o3d.t.geometry.PointCloud.estimate_normals(cloud, radius=radius, max_nn=max_nn)
+    location = o3d.core.Tensor([0., 0., 0.], o3d.core.Dtype.Float32, device)
+    o3d.t.geometry.PointCloud.orient_normals_towards_camera_location(cloud,
+                                                                    camera_location=location)  # 让法向量的方向都指向给定的相机位置
     normals = cloud.point['normals'].cpu().numpy()
     return normals
