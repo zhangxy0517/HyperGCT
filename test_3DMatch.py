@@ -311,8 +311,8 @@ if __name__ == '__main__':
     config.inlier_threshold = 0.1
     config.re_thre = 15
     config.te_thre = 30
-    # change the dataset path here
-    config.root = '/media/SSD/PCR_methods/SC2-PCR-main/data'
+    # TODO change the dataset path here
+    # config.root = ''
 
 
     if args.use_icp:
