@@ -15,6 +15,9 @@ CUDA 11.8 and conda should be installed first, then you may configure HyperGCT a
 
 We provide the pre-trained model of 3DMatch in `snapshot/HyperGCT_3DMatch_release` and KITTI in `snapshot/HyperGCT_KITTI_release`.
 
+## Data Preparation
+
+
 
 ## Instructions to training and testing
 
@@ -40,5 +43,7 @@ python test_KITTI.py --chosen_snapshot [exp_id] --descriptor FPFH --use_icp Fals
 ## Acknowledgments
 We thank the authors of 
 - [PointDSC](https://github.com/XuyangBai/PointDSC)
-- 
+- [SC2PCR](https://github.com/ZhiChen902/SC2-PCR)
+- [MAC](https://github.com/zhangxy0517/3D-Registration-with-Maximal-Cliques)
+- [VBReg](https://github.com/Jiang-HB/VBReg)
 for open sourcing their methods.
