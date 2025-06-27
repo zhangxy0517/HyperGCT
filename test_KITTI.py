@@ -212,6 +212,7 @@ if __name__ == '__main__':
     parser.add_argument('--chosen_snapshot', default='HyperGCT_KITTI_release', type=str, help='snapshot dir')
     parser.add_argument('--dataset', default='KITTI_10m', type=str, choices=['KITTI_10m', 'KITTI_LC'])
     parser.add_argument('--range', default='0_10', type=str, choices=['0_10', '10_20', '20_30'])
+    parser.add_argument('--descriptor', default='fpfh', type=str, choices=['fcgf', 'fpfh'])
     parser.add_argument('--solver', default='SVD', type=str, choices=['SVD', 'RANSAC'])
     parser.add_argument('--use_icp', default=False, type=str2bool)
     args = parser.parse_args()
@@ -234,7 +235,9 @@ if __name__ == '__main__':
 
     config.re_thre = 5
     config.te_thre = 60
+    config.descriptor = args.descriptor
     if args.dataset == 'KITTI_LC':
+        config.descriptor = 'fpfh'
         config.inlier_threshold = 1.2
         config.seed_ratio = 1.0
         if args.range == "10_20":
@@ -243,9 +246,9 @@ if __name__ == '__main__':
             config.te_thre = 180
     elif args.dataset == 'KITTI_10m':
         config.inlier_threshold = 0.6
-    # change the dataset path here
+    # TODO change the dataset path here
     # config.root = ''
-    config.descriptor = 'fpfh'
+    
     config.mode = 'test'
     from models.mymodel import MethodName
     model = MethodName(config)
