@@ -311,9 +311,9 @@ if __name__ == '__main__':
     config.re_thre = 15
     config.te_thre = 30
     # change the dataset path here
-    config.root = '/media/SSD/PCR_methods/SC2-PCR-main/data'
-    if args.descriptor == 'predator':
-        config.root = '/data/zxy/Predator/snapshot/indoor/3DLoMatch'
+    # config.root = ''
+    # if args.descriptor == 'predator':
+    #    config.root = ''
     
     log_filename = f'logs/3DLoMatch_{args.chosen_snapshot}-{args.descriptor}-{args.num_points}.log'
     logging.basicConfig(level=logging.INFO,
