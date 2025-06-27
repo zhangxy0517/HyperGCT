@@ -8,8 +8,6 @@ from utils.SE3 import transform
 from utils.timer import Timer
 import math
 
-#torch.autograd.set_detect_anomaly(True)
-
 def distance(x):  # bs, channel, num_points
     inner = -2 * torch.matmul(x.transpose(2, 1).contiguous(), x)
     xx = torch.sum(x ** 2, dim=1, keepdim=True)
@@ -70,7 +68,6 @@ class GraphUpdate(nn.Module):
         # mask attention using SC2 prior
         attention_mask = 1 - H0  # 固定图结构，验证主网络
         attention_mask = attention_mask.masked_fill(attention_mask.bool(), -1e9)
-        # graph loss 需要根据下一行修改
         score = torch.sigmoid(attention + attention_mask[:, None, :,
                                           :])  # [bs, head, num_corr, num_corr] row->V, col->E, 考察每个节点分别属于每个边的概率(col上的softmax,因为每个节点经过mask后属于的边数不同)
         # if V is not None:
@@ -197,7 +194,6 @@ class feature_aggregation_layer(nn.Module):
 
         else:
             # feature aggregation using softmax or more complicate ways (attention)
-            #  vertex feature -> matching confidence, edge feature -> good cliques for registration at the 2nd stage (contrastive learning?)
             if self.aggr == 'mean':
                 # v->e
                 # aggregation message from v to e
@@ -257,8 +253,8 @@ class HGNN_layer(nn.Module):
         # update feature of vertex
         if self.residual_connection:
             x = x1 * (1 - alpha) + alpha * x0
-            x = (1 - thete) * x + thete * self.bn(self.con(x))  # 层数越深，卷积的占比越小->迭代后期loss下降缓慢
-        else:  # 作用：预测的recall上升但precision基本不变，要提高精度改变feature_aggregation_layer？
+            x = (1 - thete) * x + thete * self.bn(self.con(x)) 
+        else:  
             x = self.bn(self.con(x1)) + x
         x = F.leaky_relu(x, negative_slope=0.2)
         if not self.use_edge_feature:
@@ -299,7 +295,7 @@ class HGNN(nn.Module):
         # 2. Degree of V, E.
         degree = H.sum(dim=1)
         # mask = torch.zeros_like(degree).to(x.device)
-        # mask[degree > 0] = 1  #  [bs, num] mask=0 where degree=0 (unused) 考虑全局特征的掩码操作（attention, mlp）0506
+        # mask[degree > 0] = 1 
 
         raw_H = H
         D = torch.diag_embed(degree)  # torch.sparse_matrix
@@ -486,7 +482,6 @@ class MethodName(nn.Module):
         assert H.shape[0] == 1
         # H0 = H
         H = self.graph_matrix_reconstruct(H, 1, None)
-        # TODO 匹配数量大时性能下降的原因？
         bs, num_corr, _ = H.size()
         D = torch.sum(H, dim=-1) # [bs, num_corr]
         L = torch.diag_embed(D) - H # [bs, num_corr, num_corr]
