@@ -20,7 +20,7 @@ if __name__ == '__main__':
         print(f"    {k}: {dconfig[k]}")
     config = edict(dconfig)
     # TODO change the dataset path here
-    config.root = ''
+    # config.root = ''
 
     resume = False
     if resume:
