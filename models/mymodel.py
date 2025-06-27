@@ -596,7 +596,7 @@ class MethodName(nn.Module):
         # 3、滑动窗口采样
         s = 6  # 窗口长度
         m = 3  # 步长
-        iters = 30
+        iters = 15 # 采样次数
         max_iters = int((max_length - s) / m)
         if max_length > s + m:
             iters = min(max_iters, iters)
