@@ -6,16 +6,14 @@ Geometric constraints between feature matches are critical in 3D point cloud reg
 
 ## Requirements
 
-If you are using conda, you may configure PointDSC as:
+CUDA 11.8 and conda should be installed first, then you may configure HyperGCT as:
 
     conda env create -f environment.yml
-    conda activate pointdsc
-
-CUDA 11.8
+    conda activate HyperGCT
 
 ## Pretrained Model
 
-We provide the pre-trained model of 3DMatch in `snapshot/PointDSC_3DMatch_release` and KITTI in `snapshot/PointDSC_KITTI_release`.
+We provide the pre-trained model of 3DMatch in `snapshot/HyperGCT_3DMatch_release` and KITTI in `snapshot/HyperGCT_KITTI_release`.
 
 
 ## Instructions to training and testing
@@ -26,9 +24,9 @@ The training and testing on 3DMatch dataset can be done by running
 ```bash
 python train_3dmatch.py
 
-python evaluation/test_3DMatch.py --chosen_snapshot [exp_id] --use_icp False
+python test_3DMatch.py --chosen_snapshot [exp_id] --descriptor FCGF --use_icp False
 ```
-where the `exp_id` should be replaced by the snapshot folder name for testing (e.g. `PointDSC_3DMatch_release`).  The testing results will be saved in `logs/`. The training config can be changed in `config.py`. We also provide the scripts to test the traditional outlier rejection baselines on 3DMatch in `baseline_scripts/baseline_3DMatch.py`.
+where the `exp_id` should be replaced by the snapshot folder name for testing (e.g. `HyperGCT_3DMatch_release`).  The testing results will be saved in `logs/`. The training config can be changed in `config.py`. 
 
 ### KITTI
 
@@ -36,20 +34,8 @@ Similarly, the training and testing of KITTI data set can be done by running
 ```bash
 python train_KITTI.py
 
-python evaluation/test_KITTI.py --chosen_snapshot [exp_id] --use_icp False
+python test_KITTI.py --chosen_snapshot [exp_id] --descriptor FPFH --use_icp False
 ```
-We also provide the scripts to test the traditional outlier rejection baselines on KITTI in `baseline_scripts/baseline_KITTI.py`.
-
-
-### Augmemented ICL-NUIM
-The detailed guidance of evaluating our method in multiway registration tasks can be found in `multiway/README.md`
-
-### 3DLoMatch
-We also evaluate our method on a recently proposed benchmark 3DLoMatch following [OverlapPredator](https://github.com/ShengyuH/OverlapPredator),
-```bash
-python evaluation/test_3DLoMatch.py --chosen_snapshot [exp_id] --descriptor [fcgf/predator] --num_points 5000
-```
-If you want to evaluate `predator` descriptor with PointDSC, you first need to follow the offical instruction of [OverlapPredator](https://github.com/ShengyuH/OverlapPredator) to extract the features. 
 
 ## Acknowledgments
 We thank the authors of 
