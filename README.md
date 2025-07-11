@@ -1,12 +1,12 @@
 # HyperGCT: A Dynamic Hyper-GNN-Learned Geometric Constraint for 3D Registration (ICCV 2025)
-Source code of [HyperGCT](). 
+Source code of [HyperGCT](https://arxiv.org/abs/2503.02195). 
 
 ## Introduction
 Geometric constraints between feature matches are critical in 3D point cloud registration problems. Existing approaches typically model unordered matches as a consistency graph and sample consistent matches to generate hypotheses. However, explicit graph construction introduces noise, posing great challenges for handcrafted geometric constraints to render consistency. To overcome this, we propose HyperGCT, a flexible dynamic **Hyper**-**G**NN-learned geometric **C**onstrain**T** that leverages high-order consistency among 3D correspondences. To our knowledge, HyperGCT is the first method that mines robust geometric constraints from dynamic hypergraphs for 3D registration. By dynamically optimizing the hypergraph through vertex and edge feature aggregation, HyperGCT effectively captures the correlations among correspondences, leading to accurate hypothesis generation. Extensive experiments on 3DMatch, 3DLoMatch, KITTI-LC, and ETH show that HyperGCT achieves state-of-the-art performance. Furthermore, HyperGCT is robust to graph noise, demonstrating a significant advantage in terms of generalization.
 ![](figures/pipeline.png)
 
 ## Requirements
-All experiments are conducted on RTX 3090 GPUs configured with cuda 11.8. So ``CUDA`` and ``conda`` should be installed first, then you may configure HyperGCT as:
+All experiments are conducted on RTX 3090 GPUs configured with CUDA 11.8. So ``CUDA`` and ``conda`` should be installed first, then you may configure HyperGCT as:
 ```
 conda env create -f environment.yml
 conda activate HyperGCT
@@ -61,8 +61,8 @@ We follow [LiDAR Registration Benchmark](https://github.com/HKUST-Aerial-Robotic
             └── ...  
 ```
 
-## Instructions to training and testing
-Before training and testing, you need to modify the dataset path through ``config.root`` in the following scripts.
+## Instructions for training and testing
+Before training and testing, modify the dataset path through ``config.root`` in the following scripts.
 ### 3DMatch
 
 The training and testing on 3DMatch dataset can be done by running
@@ -74,11 +74,11 @@ python test_3DMatch.py --chosen_snapshot [exp_id] --descriptor FCGF --use_icp Fa
 # test on 3DLoMatch
 python test_3DLoMatch.py --chosen_snapshot [exp_id] --descriptor FCGF --use_icp False
 ```
-where the `exp_id` should be replaced by the snapshot folder name for testing (e.g. `HyperGCT_3DMatch_release`).  The testing results will be saved in `logs/`. 
+where the `exp_id` should be replaced by the snapshot folder name for testing (e.g., `HyperGCT_3DMatch_release`).  The testing results will be saved in `logs/`. 
 
 ### KITTI
 
-Similarly, the training and testing of KITTI data set can be done by running
+Similarly, the training and testing of KITTI dataset can be done by running
 ```bash
 # train on KITTI-10m
 python train_KITTI.py
@@ -95,7 +95,7 @@ We thank the authors of
 - [MAC](https://github.com/zhangxy0517/3D-Registration-with-Maximal-Cliques)
 - [VBReg](https://github.com/Jiang-HB/VBReg)
 
-for open sourcing their methods.
+for open-sourcing their methods.
 
 ## Citation
 If you find this code useful for your work or use it in your project, please consider citing:
