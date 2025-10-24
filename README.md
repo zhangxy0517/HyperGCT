@@ -1,5 +1,5 @@
 # HyperGCT: A Dynamic Hyper-GNN-Learned Geometric Constraint for 3D Registration (ICCV 2025)
-Source code of [HyperGCT](https://arxiv.org/abs/2503.02195). 
+Source code of [HyperGCT](https://openaccess.thecvf.com/content/ICCV2025/papers/Zhang_HyperGCT_A_Dynamic_Hyper-GNN-Learned_Geometric_Constraint_for_3D_Registration_ICCV_2025_paper.pdf). 
 
 ## Introduction
 Geometric constraints between feature matches are critical in 3D point cloud registration problems. Existing approaches typically model unordered matches as a consistency graph and sample consistent matches to generate hypotheses. However, explicit graph construction introduces noise, posing great challenges for handcrafted geometric constraints to render consistency. To overcome this, we propose HyperGCT, a flexible dynamic **Hyper**-**G**NN-learned geometric **C**onstrain**T** that leverages high-order consistency among 3D correspondences. To our knowledge, HyperGCT is the first method that mines robust geometric constraints from dynamic hypergraphs for 3D registration. By dynamically optimizing the hypergraph through vertex and edge feature aggregation, HyperGCT effectively captures the correlations among correspondences, leading to accurate hypothesis generation. Extensive experiments on 3DMatch, 3DLoMatch, KITTI-LC, and ETH show that HyperGCT achieves state-of-the-art performance. Furthermore, HyperGCT is robust to graph noise, demonstrating a significant advantage in terms of generalization.
@@ -101,5 +101,12 @@ for open-sourcing their methods.
 If you find this code useful for your work or use it in your project, please consider citing:
 
 ```shell
-
+@InProceedings{Zhang_2025_ICCV,
+    author    = {Zhang, Xiyu and Ma, Jiayi and Guo, Jianwei and Hu, Wei and Qi, Zhaoshuai and Hui, Fei and Yang, Jiaqi and Zhang, Yanning},
+    title     = {HyperGCT: A Dynamic Hyper-GNN-Learned Geometric Constraint for 3D Registration},
+    booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+    month     = {October},
+    year      = {2025},
+    pages     = {24750-24759}
+}
 ```
