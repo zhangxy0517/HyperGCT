@@ -16,7 +16,7 @@ conda activate HyperGCT
 We provide the pre-trained model of 3DMatch in `snapshot/HyperGCT_3DMatch_release` and KITTI in `snapshot/HyperGCT_KITTI_release`.
 
 ## Data Preparation
-The processed train and test sets can be found [Here](https://pan.baidu.com/s/1syXjIaYg6DYb649i9RBmNA?pwd=6666).
+The processed train and test sets can be found [Here](https://pan.baidu.com/s/1tXPPOXmePEEMTPr12ZwKRA?pwd=6666).
 ### 3DMatch / 3DLoMatch
 We follow [PointDSC](https://github.com/XuyangBai/PointDSC) to generate datasets. The data should be organized as follows:
 
